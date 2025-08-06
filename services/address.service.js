@@ -1,4 +1,4 @@
-import Address from "../models/Address.model.js";
+import Address from "../Models/Address.model.js";
 
 // Add a new address (and optionally make it default)
 export const createAddress = async (userId, addressData) => {
