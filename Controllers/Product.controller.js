@@ -1,4 +1,4 @@
-import * as productService from "../services/product.service.js";
+import * as productService from "../Services/Product.service.js";
 import  Product  from "../Models/Product.model.js";
 // ✅ Create a new product (Admin only)
 export const createProduct = async (req, res) => {

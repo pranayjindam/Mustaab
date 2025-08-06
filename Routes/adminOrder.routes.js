@@ -1,3 +1,5 @@
+import { AuthenticateAdmin } from "../Middlewares/auth";
+import {getAllOrders,confirmedOrder,cancelledOrder,deliverOrder,shippOrder,deleteOrder} from "../Controllers/AdminOrder.controller";
 /**
  * @swagger
  * tags:
@@ -19,7 +21,7 @@
  *       401:
  *         description: Unauthorized
  */
-router.get("/", authenticate, adminOrderController.getAllOrders);
+router.get("/", AuthenticateAdmin,getAllOrders);
 
 /**
  * @swagger
@@ -39,7 +41,7 @@ router.get("/", authenticate, adminOrderController.getAllOrders);
  *       202:
  *         description: Order confirmed
  */
-router.put("/:orderId/confirmed", authenticate, adminOrderController.confirmedOrder);
+router.put("/:orderId/confirmed", AuthenticateAdmin,confirmedOrder);
 
 /**
  * @swagger
@@ -59,7 +61,7 @@ router.put("/:orderId/confirmed", authenticate, adminOrderController.confirmedOr
  *       202:
  *         description: Order shipped
  */
-router.put("/:orderId/ship", authenticate, adminOrderController.shippOrder);
+router.put("/:orderId/ship", AuthenticateAdmin,shippOrder);
 
 /**
  * @swagger
@@ -79,7 +81,7 @@ router.put("/:orderId/ship", authenticate, adminOrderController.shippOrder);
  *       202:
  *         description: Order delivered
  */
-router.put("/:orderId/deliver", authenticate, adminOrderController.deliverOrder);
+router.put("/:orderId/deliver", AuthenticateAdmin,deliverOrder);
 
 /**
  * @swagger
@@ -99,7 +101,7 @@ router.put("/:orderId/deliver", authenticate, adminOrderController.deliverOrder)
  *       202:
  *         description: Order cancelled
  */
-router.put("/:orderId/cancel", authenticate, adminOrderController.cancelledOrder);
+router.put("/:orderId/cancel", AuthenticateAdmin,cancelledOrder);
 
 /**
  * @swagger
@@ -119,4 +121,4 @@ router.put("/:orderId/cancel", authenticate, adminOrderController.cancelledOrder
  *       202:
  *         description: Order deleted
  */
-router.delete("/:orderId/delete", authenticate, adminOrderController.deleteOrder);
+router.delete("/:orderId/delete", AuthenticateAdmin,deleteOrder);

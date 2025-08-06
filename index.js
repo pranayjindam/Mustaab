@@ -7,10 +7,10 @@ import userRouter from "./Routes/User.routes.js";
 import ProductRouter from "./Routes/Product.routes.js";
 import cartRouter from "./Routes/Cart.routes.js";
 import addressRouter from "./Routes/Address.routes.js";
-import orderRouter from "./Routes/order.routes.js";
-import adminRouter from "./Routes/admin.routes.js";
-import paymentRouter from "./Routes/payment.routes.js";
-import authRouter from "./Routes/auth.routes.js";
+import orderRouter from "./Routes/Order.routes.js";
+import adminRouter from "./Routes/Admin.routes.js";
+import paymentRouter from "./Routes/Payment.routes.js";
+import authRouter from "./Routes/Auth.routes.js";
 import { AuthenticateAdmin, AuthenticateUser } from "./Middlewares/auth.js";
 dotenv.config();
 

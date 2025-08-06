@@ -1,4 +1,4 @@
-import User from "../models/User.model.js";
+import User from "../Models/User.model.js";
 import { Cart } from "../models/Cart.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";

@@ -3,7 +3,7 @@ import {
   deleteAdmin,
   updateAdmin,
   getAdminDetails,
-} from "../services/admin.service.js";
+} from "../Services/Admin.service.js";
 
 // Register admin route handler
 export const handleAdminRegister = async (req, res) => {
