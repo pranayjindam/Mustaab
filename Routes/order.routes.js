@@ -3,7 +3,7 @@ import {
   createRazorpayOrder,
   placeOrder,
   getAllOrders,
-} from "../controllers/order.controller.js";
+} from "../controllers/Order.controller.js";
 
 const orderRouter = express.Router();
 orderRouter.post("/create-razorpay-order", createRazorpayOrder);
