@@ -1,0 +1,42 @@
+import User from "../Models/user.model.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+export const login = async (req, res) => {
+  const { identifier, password } = req.body;
+console.log("req.body is:", req.body);
+
+  try {
+    console.log("identifer is", identifier);
+    const user = await User.findOne({ email: identifier })
+    console.log("user is", user);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Invalid password." });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        role: user.role,
+      }
+    });
+
+  } catch (error) {
+    console.error("Login error:", error.message);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
