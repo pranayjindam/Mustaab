@@ -1,7 +1,7 @@
 // services/admin.service.js
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "../Models/User.model.js";
+import User from "../Models/user.model.js";
 import dotenv from "dotenv";
 
 dotenv.config(); // Make sure JWT_SECRET is available

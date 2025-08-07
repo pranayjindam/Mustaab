@@ -1,8 +1,8 @@
 import express from "express";
 const authRouter = express.Router();
-import { handleAdminRegister } from "../Controllers/Admin.controller.js";
+import { handleAdminRegister } from "../Controllers/admin.controller.js";
 import { register } from "../Controllers/User.controller.js";
-import {login} from "../Controllers/Login.controller.js";
+import {login} from "../Controllers/login.controller.js";
 
 /**
  * @swagger

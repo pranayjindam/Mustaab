@@ -5,7 +5,7 @@ import {
   removeCartItem,
   clearCart,
   upsertCartItem,
-} from "../Services/Cart.service.js";
+} from "../Services/cart.service.js";
 
 export const updateCartQuantity = async (req, res) => {
   try {

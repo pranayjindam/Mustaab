@@ -1,4 +1,4 @@
-import * as AddressService from "../Services/Address.service.js";
+import * as AddressService from "../services/Address.service.js";
 
 // Create
 export const createAddress = async (req, res) => {

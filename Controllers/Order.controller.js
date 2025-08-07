@@ -2,7 +2,7 @@ import {
   createOrderService,
   verifyAndPlaceOrderService,
   getOrderByIdService
-} from "../Services/Order.service.js";
+} from "../services/order.service.js";
 
 export const createRazorpayOrder = async (req, res) => {
   try {

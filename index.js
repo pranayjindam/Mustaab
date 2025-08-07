@@ -15,7 +15,7 @@ import { AuthenticateAdmin, AuthenticateUser } from "./Middlewares/auth.js";
 dotenv.config();
 
 const app = express();
-import {swaggerUi, swaggerSpec }  from './swagger.js';
+import { swaggerSpec, swaggerUiExpress } from './swagger.js';
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ✅ Allow CORS for React frontend on port 1000

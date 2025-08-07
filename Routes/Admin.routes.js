@@ -4,7 +4,7 @@ import {
   handleAdminUpdate,
   handleAdminDetails,
   handleAdminDelete,
-} from "../Controllers/Admin.controller.js";
+} from "../Controllers/admin.controller.js";
 import { AuthenticateAdmin } from "../Middlewares/auth.js";
 
 const adminRouter = express.Router();
