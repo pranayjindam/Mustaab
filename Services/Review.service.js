@@ -1,5 +1,5 @@
-import Review from "../models/Review.js";
-import Product from "../models/Product.model.js";
+import Review from "../Models/Review.js";
+import Product from "../Models/Product.model.js";
 import mongoose from "mongoose";
 
 export const createReview = async ({ productId, rating, review }, user) => {

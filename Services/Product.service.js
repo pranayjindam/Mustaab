@@ -1,4 +1,4 @@
-import Product from "../models/Product.model.js";
+import Product from "../Models/Product.model.js";
 
 // 🟢 Create a new product (Admin only)
 export const createProduct = async (productData) => {
