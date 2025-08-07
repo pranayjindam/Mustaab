@@ -11,7 +11,7 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: "http://localhost:2000", // adjust if different
+      url: "https://mustaab.onrender.com", // adjust if different
     },
   ],
   components: {
