@@ -1,5 +1,5 @@
 
-import { getAllOrders as _getAllOrders, confirmedOrder as _confirmedOrder, shipOrder, deliveredOrder, cancelledOrder as _cancelledOrder, deleteOrder as _deleteOrder } from "../services/order.service";
+import { getAllOrders as _getAllOrders, confirmedOrder as _confirmedOrder, shipOrder, deliveredOrder, cancelledOrder as _cancelledOrder, deleteOrder as _deleteOrder } from "../Services/Order.service";
 
 const getAllOrders = async (req, res) => {
   try {

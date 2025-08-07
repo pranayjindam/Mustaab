@@ -1,7 +1,7 @@
 // controllers/paymentController.js
 import Razorpay from "razorpay";
 import crypto from "crypto";
-import Order from "../Models/order.model.js";
+import Order from "../Models/Order.model.js";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
