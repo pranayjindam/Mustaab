@@ -1,7 +1,3 @@
-// swagger.js
-import swaggerJSDoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
-
 const swaggerDefinition = {
   openapi: "3.0.0",
   info: {
@@ -11,7 +7,7 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: "https://mustaab.onrender.com", // adjust if different
+      url: "https://mustaab.onrender.com", // ✅ Deployed URL
     },
   ],
   components: {
@@ -27,21 +23,13 @@ const swaggerDefinition = {
         scheme: "bearer",
         bearerFormat: "JWT",
         description: "JWT token for ADMIN user"
-      },
-     security: [
-  {
-    adminAuth: [],
-    clientAuth: [],
-  },
-],
+      }
     }
-  }
+  },
+  security: [
+    {
+      adminAuth: [],
+      clientAuth: [],
+    },
+  ],
 };
-
-const options = {
-  swaggerDefinition,
-  apis: ["./routes/*.js"], // <--- Your routes folder path
-};
-
-export const swaggerSpec = swaggerJSDoc(options);
-export { swaggerUi };
