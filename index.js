@@ -16,7 +16,8 @@ dotenv.config();
 
 const app = express();
 import { swaggerSpec, swaggerUiExpress } from './swagger.js';
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUiExpress.serve, swaggerUiExpress.setup(swaggerSpec));
+
 
 // ✅ Allow CORS for React frontend on port 1000
 app.use(cors({
