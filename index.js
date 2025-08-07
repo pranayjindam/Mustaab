@@ -20,9 +20,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ✅ Allow CORS for React frontend on port 1000
 app.use(cors({
-  origin: "http://localhost:1000",
-  credentials: true, // if you're using cookies or sessions
+  origin: "*", // Allow requests from any origin
 }));
+
 
 // ✅ Middleware to parse JSON
 app.use(express.json());
