@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { connectDb } from "./config/db.js";
-import { initializeAdminUser } from "./Services/admin.service.js";
+import { initializeAdminUser } from "./services/admin.service.js";
 import { app } from "./index.js";
 
 const PORT = process.env.PORT || 2000;
