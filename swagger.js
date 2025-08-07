@@ -1,13 +1,17 @@
+// swagger.js
+import swaggerJSDoc from "swagger-jsdoc";
+import swaggerUiExpress from "swagger-ui-express"; // Rename for clarity
+
 const swaggerDefinition = {
   openapi: "3.0.0",
   info: {
     title: "Ecommerce API",
     version: "1.0.0",
-    description: "MERN Ecommerce API Docs"
+    description: "MERN Ecommerce API Docs",
   },
   servers: [
     {
-      url: "https://mustaab.onrender.com", // ✅ Deployed URL
+      url: "https://mustaab.onrender.com", // ✅ Your deployed URL
     },
   ],
   components: {
@@ -23,13 +27,20 @@ const swaggerDefinition = {
         scheme: "bearer",
         bearerFormat: "JWT",
         description: "JWT token for ADMIN user"
-      }
+      },
     }
   },
   security: [
-    {
-      adminAuth: [],
-      clientAuth: [],
-    },
-  ],
+    { clientAuth: [] },
+    { adminAuth: [] },
+  ]
 };
+
+const options = {
+  swaggerDefinition,
+  apis: ["./routes/*.js"], // ✅ Make sure your route files contain Swagger comments
+};
+
+const swaggerSpec = swaggerJSDoc(options);
+
+export { swaggerSpec, swaggerUiExpress };
