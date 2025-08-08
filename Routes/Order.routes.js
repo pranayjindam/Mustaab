@@ -7,9 +7,9 @@ import {
   updateOrderStatus,
   cancelOrder,
   deleteOrder,
-} from "../controllers/Order.controller.js";
+} from "../Controllers/Order.controller.js";
 
-import { AuthenticateUser, AuthenticateAdmin } from "../middlewares/auth.js";
+import { AuthenticateUser, AuthenticateAdmin } from "../Middlewares/auth.js";
 
 const router = express.Router();
 
