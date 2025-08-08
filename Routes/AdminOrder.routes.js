@@ -1,5 +1,16 @@
-import { AuthenticateAdmin } from "../Middlewares/auth";
-import {getAllOrders,confirmedOrder,cancelledOrder,deliverOrder,shippOrder,deleteOrder} from "../Controllers/AdminOrder.controller";
+import express from "express";
+import { AuthenticateAdmin } from "../Middlewares/auth.js";
+import {
+  getAllOrders,
+  confirmedOrder,
+  cancelledOrder,
+  deliverOrder,
+  shippOrder,
+  deleteOrder,
+} from "../Controllers/AdminOrder.controller.js";
+
+const router = express.Router();
+
 /**
  * @swagger
  * tags:
@@ -21,7 +32,7 @@ import {getAllOrders,confirmedOrder,cancelledOrder,deliverOrder,shippOrder,delet
  *       401:
  *         description: Unauthorized
  */
-router.get("/", AuthenticateAdmin,getAllOrders);
+router.get("/", AuthenticateAdmin, getAllOrders);
 
 /**
  * @swagger
@@ -41,7 +52,7 @@ router.get("/", AuthenticateAdmin,getAllOrders);
  *       202:
  *         description: Order confirmed
  */
-router.put("/:orderId/confirmed", AuthenticateAdmin,confirmedOrder);
+router.put("/:orderId/confirmed", AuthenticateAdmin, confirmedOrder);
 
 /**
  * @swagger
@@ -61,7 +72,7 @@ router.put("/:orderId/confirmed", AuthenticateAdmin,confirmedOrder);
  *       202:
  *         description: Order shipped
  */
-router.put("/:orderId/ship", AuthenticateAdmin,shippOrder);
+router.put("/:orderId/ship", AuthenticateAdmin, shippOrder);
 
 /**
  * @swagger
@@ -81,7 +92,7 @@ router.put("/:orderId/ship", AuthenticateAdmin,shippOrder);
  *       202:
  *         description: Order delivered
  */
-router.put("/:orderId/deliver", AuthenticateAdmin,deliverOrder);
+router.put("/:orderId/deliver", AuthenticateAdmin, deliverOrder);
 
 /**
  * @swagger
@@ -101,7 +112,7 @@ router.put("/:orderId/deliver", AuthenticateAdmin,deliverOrder);
  *       202:
  *         description: Order cancelled
  */
-router.put("/:orderId/cancel", AuthenticateAdmin,cancelledOrder);
+router.put("/:orderId/cancel", AuthenticateAdmin, cancelledOrder);
 
 /**
  * @swagger
@@ -121,4 +132,6 @@ router.put("/:orderId/cancel", AuthenticateAdmin,cancelledOrder);
  *       202:
  *         description: Order deleted
  */
-router.delete("/:orderId/delete", AuthenticateAdmin,deleteOrder);
+router.delete("/:orderId/delete", AuthenticateAdmin, deleteOrder);
+
+export default router;
