@@ -6,7 +6,7 @@ import {
   updateOrderStatusService,
   cancelOrderService,
   deleteOrderService,
-} from "../services/Order.service.js";
+} from "../Services/Order.service.js";
 
 // Create order (client)
 export const createOrder = async (req, res) => {
