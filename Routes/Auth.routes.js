@@ -77,7 +77,6 @@ authRouter.post("/signup", register);
  */
 authRouter.post("/admin-register", handleAdminRegister);
 
-
 /**
  * @swagger
  * /api/auth/signin:

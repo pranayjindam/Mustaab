@@ -9,9 +9,7 @@ import cartRouter from "./Routes/Cart.routes.js";
 import addressRouter from "./Routes/Address.routes.js";
 import orderRouter from "./Routes/Order.routes.js";
 import adminRouter from "./Routes/Admin.routes.js";
-import paymentRouter from "./Routes/Payment.routes.js";
 import authRouter from "./Routes/Auth.routes.js";
-import adminOrderRouter from "./Routes/AdminOrder.routes.js";
 // ... other imports and middleware
 
 // Mount Admin Orders routes with authentication
@@ -71,6 +69,5 @@ app.use("/api/cart", AuthenticateUser, cartRouter);
 app.use("/api/address", AuthenticateUser, addressRouter);
 app.use("/api/order", AuthenticateUser, orderRouter);
 app.use("/api/product", ProductRouter);
-app.use("/api/payment", AuthenticateUser, paymentRouter);
 
 export { app };
