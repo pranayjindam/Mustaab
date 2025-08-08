@@ -10,12 +10,9 @@ import addressRouter from "./Routes/Address.routes.js";
 import orderRouter from "./Routes/Order.routes.js";
 import adminRouter from "./Routes/Admin.routes.js";
 import authRouter from "./Routes/Auth.routes.js";
-// ... other imports and middleware
+import { AuthenticateAdmin, AuthenticateUser } from "./Middlewares/auth.js";
 
 const app = express();
-// Mount Admin Orders routes with authentication
-app.use("/api/admin/orders", adminOrderRouter);
-import { AuthenticateAdmin, AuthenticateUser } from "./Middlewares/auth.js";
 
 dotenv.config();
 
