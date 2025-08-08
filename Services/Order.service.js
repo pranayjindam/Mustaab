@@ -152,3 +152,19 @@ export const getOrderByIdService = async (orderId) => {
     data: { success: true, order },
   };
 };
+
+
+export const getAllOrdersService = async () => {
+  try {
+    const orders = await Order.find().populate("user", "name email");
+    return {
+      status: 200,
+      data: { success: true, orders },
+    };
+  } catch (error) {
+    return {
+      status: 500,
+      data: { success: false, message: "Failed to fetch orders", error: error.message },
+    };
+  }
+};

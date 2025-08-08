@@ -1,8 +1,10 @@
 import {
   createOrderService,
   verifyAndPlaceOrderService,
-  getOrderByIdService
+  getOrderByIdService,
+  getAllOrdersService,
 } from "../Services/Order.service.js";
+
 
 export const createRazorpayOrder = async (req, res) => {
   try {
@@ -38,4 +40,17 @@ export const getAllOrders = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
+
+
+export const verifyAndPlaceOrder = async (req, res) => {
+  try {
+    const result = await verifyAndPlaceOrderService(req.body, req.user._id);
+    return res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("verifyAndPlaceOrder error:", error.message);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 
