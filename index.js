@@ -12,13 +12,13 @@ import adminRouter from "./Routes/Admin.routes.js";
 import authRouter from "./Routes/Auth.routes.js";
 // ... other imports and middleware
 
+const app = express();
 // Mount Admin Orders routes with authentication
 app.use("/api/admin/orders", adminOrderRouter);
 import { AuthenticateAdmin, AuthenticateUser } from "./Middlewares/auth.js";
 
 dotenv.config();
 
-const app = express();
 import { swaggerSpec, swaggerUiExpress } from './swagger.js';
 app.use('/api-docs', swaggerUiExpress.serve, swaggerUiExpress.setup(swaggerSpec));
 
