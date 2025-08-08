@@ -1,4 +1,3 @@
-// models/Order.js
 import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema(
@@ -20,7 +19,16 @@ const orderSchema = new mongoose.Schema(
       paymentStatus: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
     },
     totalPrice: { type: Number, required: true },
-    orderStatus: { type: String, enum: ["pending", "confirmed", "shipped", "delivered"], default: "pending" },
+    orderStatus: {
+      type: String,
+      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled", "failed"],
+      default: "pending",
+    },
+
+    // Razorpay fields
+    razorpayOrderId: { type: String },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
   },
   { timestamps: true }
 );

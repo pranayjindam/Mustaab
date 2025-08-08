@@ -1,7 +1,7 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import Order from "../Models/Order.model.js";
+import Order from "../models/Order.model.js";
 
 dotenv.config();
 
@@ -10,24 +10,28 @@ const razorpayInstance = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Service to create Razorpay order and save in DB
+// Create Razorpay order & save order in DB
 export const createOrderService = async (data, userId) => {
   try {
     const options = {
-      amount: data.amount, // in paise
+      amount: data.totalPrice, // amount in paise
       currency: "INR",
-      receipt: `rcptid_${Date.now()}`,
+      receipt: `receipt_${Date.now()}`,
     };
 
-    const order = await razorpayInstance.orders.create(options);
+    const razorpayOrder = await razorpayInstance.orders.create(options);
 
     const newOrder = new Order({
       user: userId,
-      razorpayOrderId: order.id,
-      amount: data.amount,
-      currency: order.currency,
-      status: "created",
-      items: data.items || [],
+      orderItems: data.orderItems,
+      shippingAddress: data.shippingAddress,
+      paymentDetails: {
+        paymentMethod: data.paymentMethod,
+        paymentStatus: "pending",
+      },
+      totalPrice: data.totalPrice,
+      orderStatus: "pending",
+      razorpayOrderId: razorpayOrder.id,
     });
 
     await newOrder.save();
@@ -36,9 +40,10 @@ export const createOrderService = async (data, userId) => {
       status: 200,
       data: {
         success: true,
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
+        orderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        order: newOrder,
       },
     };
   } catch (error) {
@@ -53,7 +58,7 @@ export const createOrderService = async (data, userId) => {
   }
 };
 
-// Verify payment signature and update order status
+// Verify Razorpay payment signature & update order
 export const verifyAndPlaceOrderService = async (paymentData, userId) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = paymentData;
 
@@ -67,16 +72,33 @@ export const verifyAndPlaceOrderService = async (paymentData, userId) => {
   const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
 
   if (!order) {
-    return { status: 404, data: { success: false, message: "Order not found in DB" } };
+    return {
+      status: 404,
+      data: { success: false, message: "Order not found" },
+    };
+  }
+
+  if (order.user.toString() !== userId.toString()) {
+    return {
+      status: 403,
+      data: { success: false, message: "Unauthorized" },
+    };
   }
 
   if (!isAuthentic) {
-    order.status = "failed";
+    order.paymentDetails.paymentStatus = "failed";
+    order.orderStatus = "failed";
     await order.save();
-    return { status: 400, data: { success: false, message: "Invalid signature, payment verification failed" } };
+
+    return {
+      status: 400,
+      data: { success: false, message: "Invalid payment signature" },
+    };
   }
 
-  order.status = "completed";
+  // Successful payment update
+  order.paymentDetails.paymentStatus = "paid";
+  order.orderStatus = "confirmed";
   order.razorpayPaymentId = razorpay_payment_id;
   order.razorpaySignature = razorpay_signature;
   await order.save();
@@ -86,26 +108,95 @@ export const verifyAndPlaceOrderService = async (paymentData, userId) => {
     data: {
       success: true,
       message: "Payment verified & order placed successfully",
-      orderId: order._id,
+      order,
     },
   };
 };
 
-// Fetch order by DB _id with user info
-export const getOrderByIdService = async (orderId) => {
+// Get order by ID (user/admin)
+export const getOrderByIdService = async (orderId, userId, isAdmin = false) => {
   const order = await Order.findById(orderId).populate("user", "name email");
+
   if (!order) {
     return { status: 404, data: { success: false, message: "Order not found" } };
   }
+
+  if (!isAdmin && order.user.toString() !== userId.toString()) {
+    return { status: 403, data: { success: false, message: "Unauthorized" } };
+  }
+
   return { status: 200, data: { success: true, order } };
 };
 
-// Fetch all orders with user info
-export const getAllOrdersService = async () => {
+// Get all orders (admin: all, user: own orders)
+export const getAllOrdersService = async (userId, isAdmin = false) => {
   try {
-    const orders = await Order.find().populate("user", "name email");
+    let orders;
+    if (isAdmin) {
+      orders = await Order.find().populate("user", "name email");
+    } else {
+      orders = await Order.find({ user: userId }).populate("user", "name email");
+    }
+
     return { status: 200, data: { success: true, orders } };
   } catch (error) {
-    return { status: 500, data: { success: false, message: "Failed to fetch orders", error: error.message } };
+    return { status: 500, data: { success: false, message: error.message } };
   }
+};
+
+// Update order status (admin only)
+export const updateOrderStatusService = async (orderId, status) => {
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return { status: 404, data: { success: false, message: "Order not found" } };
+  }
+
+  // Validate allowed status values
+  const allowedStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled", "failed"];
+  if (!allowedStatuses.includes(status)) {
+    return { status: 400, data: { success: false, message: "Invalid status value" } };
+  }
+
+  order.orderStatus = status;
+  await order.save();
+
+  return { status: 200, data: { success: true, message: `Order status updated to ${status}`, order } };
+};
+
+// Cancel order (user/admin)
+export const cancelOrderService = async (orderId, userId, isAdmin = false) => {
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return { status: 404, data: { success: false, message: "Order not found" } };
+  }
+
+  if (!isAdmin && order.user.toString() !== userId.toString()) {
+    return { status: 403, data: { success: false, message: "Unauthorized" } };
+  }
+
+  // Can only cancel pending or confirmed orders
+  if (!["pending", "confirmed"].includes(order.orderStatus)) {
+    return { status: 400, data: { success: false, message: "Order cannot be cancelled now" } };
+  }
+
+  order.orderStatus = "cancelled";
+  await order.save();
+
+  return { status: 200, data: { success: true, message: "Order cancelled successfully", order } };
+};
+
+// Delete order (user/admin)
+export const deleteOrderService = async (orderId, userId, isAdmin = false) => {
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return { status: 404, data: { success: false, message: "Order not found" } };
+  }
+
+  if (!isAdmin && order.user.toString() !== userId.toString()) {
+    return { status: 403, data: { success: false, message: "Unauthorized" } };
+  }
+
+  await Order.deleteOne({ _id: orderId });
+
+  return { status: 200, data: { success: true, message: "Order deleted successfully" } };
 };
