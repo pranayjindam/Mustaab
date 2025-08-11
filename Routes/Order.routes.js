@@ -13,18 +13,17 @@ import { AuthenticateUser, AuthenticateAdmin } from "../Middlewares/auth.js";
 
 const router = express.Router();
 
-// Client routes - must be authenticated user
-router.post("/", AuthenticateUser, createOrder);               // Create order
-router.post("/verify", AuthenticateUser, verifyAndPlaceOrder); // Verify payment & place order
-router.get("/:orderId", AuthenticateUser, getOrderById);       // Get order details
-router.get("/", AuthenticateUser, getAllOrders);               // Get user's orders
+// Admin routes first
+router.get("/admin/all", AuthenticateAdmin, getAllOrders);
+router.patch("/admin/:orderId/status", AuthenticateAdmin, updateOrderStatus);
+router.delete("/admin/:orderId", AuthenticateAdmin, deleteOrder);
 
-router.patch("/:orderId/cancel", AuthenticateUser, cancelOrder); // Cancel own order
-router.delete("/:orderId", AuthenticateUser, deleteOrder);       // Delete own order
-
-// Admin routes - protected with admin middleware
-router.get("/admin/all", AuthenticateAdmin, getAllOrders);         // Get all orders from all users
-router.patch("/admin/:orderId/status", AuthenticateAdmin, updateOrderStatus); // Update order status by admin
-router.delete("/admin/:orderId", AuthenticateAdmin, deleteOrder);  // Delete any order by admin
+// Client routes after fixed admin routes
+router.get("/", AuthenticateUser, getAllOrders);
+router.get("/:orderId", AuthenticateUser, getOrderById);
+router.post("/", AuthenticateUser, createOrder);
+router.post("/verify", AuthenticateUser, verifyAndPlaceOrder);
+router.patch("/:orderId/cancel", AuthenticateUser, cancelOrder);
+router.delete("/:orderId", AuthenticateUser, deleteOrder);
 
 export default router;
