@@ -62,14 +62,13 @@ export const addToCart = async (req, res) => {
 
 export const removeItemFromCart = async (req, res) => {
   try {
-    const { productId, size, color } = req.query;
+    const { productId } = req.query;
 
     // Validate token (assuming you use Bearer token in header)
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id;
@@ -87,7 +86,7 @@ export const removeItemFromCart = async (req, res) => {
     return res.status(200).json({ success: true, cart });
   } catch (error) {
     console.error("❌ Error removing item from cart:", error);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({ success: false, message:error });
   }
 };
 

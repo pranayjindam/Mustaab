@@ -34,16 +34,13 @@ export const getCartByUser = async (userId) => {
 };
 
 
-export const removeCartItem = async (userId, productId, size, color) => {
+export const removeCartItem = async (userId, productId) => {
   const cart = await Cart.findOne({ user: new mongoose.Types.ObjectId(userId) });
   if (!cart) return null;
 
   cart.items = cart.items.filter(item =>
     !(
-      item.product.toString() === productId &&
-      (size ? item.size === size : true) &&
-      (color ? item.color === color : true)
-    )
+      item.product.toString() === productId)
   );
 
   cart.amount = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);

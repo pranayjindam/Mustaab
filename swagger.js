@@ -38,7 +38,7 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  apis: ["./routes/*.js"], // ✅ Make sure your route files contain Swagger comments
+  apis: ["./Routes/*.js"], // ✅ Make sure your route files contain Swagger comments
 };
 
 const swaggerSpec = swaggerJSDoc(options);

@@ -17,7 +17,7 @@ const startServer = async () => {
 
     console.log(`🌐 Starting Express on port ${PORT}...`);
     app.listen(PORT, () => {
-      console.log(`✅ Server is live at http://mustaab.onrender.com:${PORT}`);
+      console.log(`✅ Server is live at http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error("❌ Server failed to start:", error.message);
