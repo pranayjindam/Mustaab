@@ -1,8 +1,8 @@
 import express from "express";
 import * as reviewController from "../Controllers/Review.controller.js";
-import { AuthenticateUser, authenticateAdmin } from "../Middlewares/auth.js";
+import { AuthenticateUser, AuthenticateAdmin } from "../Middlewares/auth.js";
 
-const router = express.Router();
+const reviewRouter = express.Router();
 
 /**
  * @swagger
@@ -44,7 +44,7 @@ const router = express.Router();
  *       400:
  *         description: Validation error
  */
-router.post("/create", AuthenticateUser, reviewController.createReview);
+reviewRouter.post("/create", AuthenticateUser, reviewController.createReview);
 
 /**
  * @swagger
@@ -80,7 +80,7 @@ router.post("/create", AuthenticateUser, reviewController.createReview);
  *       200:
  *         description: List of reviews for the product
  */
-router.get("/product/:productId", reviewController.getAllReview);
+reviewRouter.get("/product/:productId", reviewController.getAllReview);
 
 /**
  * @swagger
@@ -113,7 +113,7 @@ router.get("/product/:productId", reviewController.getAllReview);
  *       403:
  *         description: Review not found or not owned by the user
  */
-router.put("/:reviewId", AuthenticateUser, reviewController.updateReview);
+reviewRouter.put("/:reviewId", AuthenticateUser, reviewController.updateReview);
 
 /**
  * @swagger
@@ -136,7 +136,7 @@ router.put("/:reviewId", AuthenticateUser, reviewController.updateReview);
  *       403:
  *         description: Review not found or not owned by user
  */
-router.delete("/:reviewId", AuthenticateUser, reviewController.deleteReview);
+reviewRouter.delete("/:reviewId", AuthenticateUser, reviewController.deleteReview);
 
 /**
  * @swagger
@@ -159,6 +159,6 @@ router.delete("/:reviewId", AuthenticateUser, reviewController.deleteReview);
  *       400:
  *         description: Review not found
  */
-router.patch("/:reviewId/hide", authenticateAdmin, reviewController.hideReview);
+reviewRouter.patch("/:reviewId/hide", AuthenticateAdmin, reviewController.hideReview);
 
-export default router;
+export default reviewRouter;

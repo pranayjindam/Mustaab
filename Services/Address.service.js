@@ -2,11 +2,8 @@ import Address from "../Models/Address.model.js";
 
 // Add a new address (and optionally make it default)
 export const createAddress = async (userId, addressData) => {
-  if (addressData.isDefault) {
     // Set all existing addresses as non-default
     await Address.updateMany({ userId }, { $set: { isDefault: false } });
-  }
-
   const newAddress = new Address({ ...addressData, userId });
   return await newAddress.save();
 };
@@ -18,17 +15,32 @@ export const getAddresses = async (userId) => {
 
 // Update an address
 export const updateAddress = async (addressId, userId, updatedData) => {
-  if (updatedData.isDefault) {
-    // Unset previous default
+  if (!updatedData) {
+    throw new Error("No update data provided");
+  }
+
+  // Clean updatedData: remove undefined keys to prevent no-op
+  const cleanData = Object.fromEntries(
+    Object.entries(updatedData).filter(([_, v]) => v !== undefined)
+  );
+
+  if (cleanData.isDefault === true) {
     await Address.updateMany({ userId }, { $set: { isDefault: false } });
   }
 
-  return await Address.findOneAndUpdate(
+  const updatedAddress = await Address.findOneAndUpdate(
     { _id: addressId, userId },
-    updatedData,
-    { new: true }
+    cleanData,
+    { new: true, runValidators: true }
   );
+
+  if (!updatedAddress) {
+    throw new Error("Address not found or not updated");
+  }
+
+  return updatedAddress;
 };
+
 
 // Delete an address
 export const deleteAddress = async (addressId, userId) => {

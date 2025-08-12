@@ -1,5 +1,5 @@
 import Product from "../Models/Product.model.js";
-
+import express from "express";
 // 🟢 Create a new product (Admin only)
 export const createProduct = async (productData) => {
   const product = new Product(productData);
@@ -38,16 +38,24 @@ export const getProductsByCategory = async (category) => {
   return await Product.find({ category }).sort({ createdAt: -1 });
 };
 
-// ✏️ Update a product (Admin only)
-export const updateProduct = async (productId, updateData) => {
-  updateData["meta.updatedAt"] = new Date(); // update timestamp
-  const updatedProduct = await Product.findByIdAndUpdate(productId, updateData, {
-    new: true,
-    runValidators: true,
-  });
-  if (!updatedProduct) throw new Error("Product not found or update failed");
-  return updatedProduct;
+// ✅ Update Product Service
+export const updateProductById = async (id, updateData) => {
+  try {
+    // Mongoose updateOne/findByIdAndUpdate ensures only given fields update
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    return updatedProduct; // returns null if not found
+  } catch (error) {
+    console.error("Service Error in updateProductById:", error);
+    throw error;
+  }
 };
+
+
 
 // ❌ Delete a product (Admin only)
 export const deleteProduct = async (productId) => {
@@ -55,13 +63,23 @@ export const deleteProduct = async (productId) => {
   if (!deletedProduct) throw new Error("Product not found or delete failed");
   return deletedProduct;
 };
-
-// 🔎 Search products by title (NOT name)
 export const searchProducts = async (keyword) => {
+  if (!keyword) {
+    throw new Error("Search keyword is required");
+  }
+
   return await Product.find({
-    title: { $regex: keyword, $options: "i" },
+    $or: [
+      { title: { $regex: keyword, $options: "i" } },
+      { description: { $regex: keyword, $options: "i" } },
+      { category: { $regex: keyword, $options: "i" } },
+      { brand: { $regex: keyword, $options: "i" } },
+      { tags: { $regex: keyword, $options: "i" } },
+    ]
   });
 };
+
+
 
 // 🌟 Get featured products
 export const getFeaturedProducts = async () => {

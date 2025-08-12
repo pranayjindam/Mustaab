@@ -41,15 +41,30 @@ export const getProductsByCategory = async (req, res) => {
   }
 };
 
-// ✅ Update a product (Admin only)
+
+// ✅ Update Product Controller
 export const updateProduct = async (req, res) => {
   try {
-    const updatedProduct = await productService.updateProduct(req.params.id, req.body);
-    res.status(200).json({ success: true, message: "Product updated", product: updatedProduct });
+    const { id } = req.params; // product id from URL
+    const updateData = req.body; // updated fields from request body
+
+    // Call service to update
+    const updatedProduct = await productService.updateProductById(id, updateData);
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    return res.status(200).json({
+      message: "Product updated successfully",
+      product: updatedProduct
+    });
   } catch (error) {
-    res.status(404).json({ success: false, message: error.message });
+    console.error("Error updating product:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
 
 // ✅ Delete a product (Admin only)
 export const deleteProduct = async (req, res) => {
@@ -64,11 +79,20 @@ export const deleteProduct = async (req, res) => {
 // ✅ Search products by title
 export const searchProducts = async (req, res) => {
   try {
-    const keyword = req.query.q || "";
+    const keyword = req.query.q?.trim();
+    if (!keyword) {
+      return res.status(400).json({ success: false, message: "Search keyword is required" });
+    }
+
     const products = await productService.searchProducts(keyword);
     res.status(200).json({ success: true, products });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+      stack: process.env.NODE_ENV === "development" ? err.stack : undefined
+    });
   }
 };
 

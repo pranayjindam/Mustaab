@@ -10,12 +10,12 @@ import orderRouter from "./Routes/Order.routes.js";
 import adminRouter from "./Routes/Admin.routes.js";
 import authRouter from "./Routes/Auth.routes.js";
 import { AuthenticateUser } from "./Middlewares/auth.js";
-
+import reviewRouter from "./Routes/Review.routes.js";
 import { swaggerSpec, swaggerUiExpress } from './swagger.js';
 
 dotenv.config();
-
 const app = express();
+app.use(express.json());
 
 app.use('/api-docs', swaggerUiExpress.serve, swaggerUiExpress.setup(swaggerSpec));
 
@@ -39,7 +39,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true })); // parses URL-encoded payloads
 app.get("/", (req, res) => {
   res.status(200).send({ message: "Welcome to ecommerce API - node" });
 });
@@ -52,5 +52,5 @@ app.use("/api/cart", AuthenticateUser, cartRouter);
 app.use("/api/address", AuthenticateUser, addressRouter);
 app.use("/api/order", AuthenticateUser, orderRouter);
 app.use("/api/product", ProductRouter);
-
+app.use("/api/review",reviewRouter);
 export { app };

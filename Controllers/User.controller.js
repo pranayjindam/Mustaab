@@ -21,6 +21,8 @@ export const profile = async (req, res) => {
 
 // Update
 export const update = async (req, res) => {
+  console.log("req.body:", req.body);
+  console.log("req.user:", req.user);
   try {
     const result = await userService.updateUser(req.user._id, req.body);
     res.status(200).json(result);
@@ -28,6 +30,7 @@ export const update = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 // Delete
 export const deleteUser = async (req, res) => {
