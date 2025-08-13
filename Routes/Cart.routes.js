@@ -6,6 +6,7 @@ import {
   removeItemFromCart,
   addToCart
 } from "../Controllers/Cart.controller.js";
+import { AuthenticateUser } from "../Middlewares/auth.js";
 
 console.log("🛒 Cart router mounted at /api/cart");
 

@@ -12,7 +12,7 @@ import authRouter from "./Routes/Auth.routes.js";
 import { AuthenticateUser } from "./Middlewares/auth.js";
 import reviewRouter from "./Routes/Review.routes.js";
 import { swaggerSpec, swaggerUiExpress } from './swagger.js';
-
+import carouselRouter from "./Routes/Carousel.routes.js";
 dotenv.config();
 const app = express();
 app.use(express.json());
@@ -45,6 +45,7 @@ app.get("/", (req, res) => {
 });
 
 // Register routes
+app.use("/api/carousel",carouselRouter)
 app.use("/api/admin", adminRouter);
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
