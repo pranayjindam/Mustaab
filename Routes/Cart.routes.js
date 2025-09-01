@@ -6,7 +6,7 @@ import {
   removeCartItem,
   clearCart,
 } from "../Controllers/Cart.controller.js";
-import { AuthenticateUser } from "../middlewares/auth.js";
+import { AuthenticateUser } from "../Middlewares/auth.js";
 
 const cartRouter = express.Router();
 
