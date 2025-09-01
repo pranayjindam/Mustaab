@@ -11,8 +11,7 @@ import {
   addMultipleProducts,
   getAllCategories
 } from "../Controllers/Product.controller.js";
-import { AuthenticateAdmin } from "../Middlewares/auth.js";
-
+import { AuthenticateAdmin, AuthenticateUser } from "../Middlewares/auth.js";
 const router = express.Router();
 
 /**
@@ -283,5 +282,4 @@ router.delete("/:id", AuthenticateAdmin, deleteProduct);
  *         description: Invalid input
  */
 router.post("/addmultipleproducts", AuthenticateAdmin, addMultipleProducts);
-
 export default router;

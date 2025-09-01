@@ -1,26 +1,29 @@
-// services/payment.service.js
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
+import Razorpay from "razorpay";
+import Order from "../models/Order.model.js";
+import Cart from "../models/Cart.model.js";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_secret: process.env.RAZORPAY_SECRET,
 });
 
 export const createRazorpayOrder = async (amount) => {
-  return await razorpay.orders.create({
-    amount: Math.round(amount),
+  const order = await razorpay.orders.create({
+    amount: amount * 100,
     currency: "INR",
-    payment_capture: 1,
   });
+  return order;
 };
 
-export const verifyOrderPayment = ({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) => {
-  const signatureData = `${razorpay_order_id}|${razorpay_payment_id}`;
-  const expectedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(signatureData)
-    .digest("hex");
+export const captureOrder = async ({ orderId, paymentId, userId, cartItems, addressId }) => {
+  const newOrder = await Order.create({
+    user: userId,
+    orderItems: cartItems,
+    address: addressId,
+    paymentInfo: { orderId, paymentId, status: "Paid" },
+    status: "Placed",
+  });
 
-  return expectedSignature === razorpay_signature;
+  await Cart.deleteOne({ user: userId });
+  return newOrder;
 };

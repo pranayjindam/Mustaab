@@ -1,14 +1,23 @@
 import Product from "../Models/Product.model.js";
-import express from "express";
-// 🟢 Create a new product (Admin only)
+
+// 🟢 Create a new product
 export const createProduct = async (productData) => {
   const product = new Product(productData);
   return await product.save();
 };
 
-// 📋 Get all products (Public)
-export const getAllProducts = async () => {
-  return await Product.find().sort({ createdAt: -1 });
+// 📋 Get all products with pagination
+export const getAllProducts = async (page = 1, limit = 20) => {
+  const skip = (page - 1) * limit;
+
+  const products = await Product.find()
+    .select("title price images category brand")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Product.countDocuments();
+  return { products, total, page, pages: Math.ceil(total / limit) };
 };
 
 // 🔍 Get a single product by ID
@@ -16,58 +25,27 @@ export const getProductById = async (productId) => {
   return await Product.findById(productId);
 };
 
-// 📦 Get products by category (men, women, etc.)
+// 📦 Get products by category
 export const getProductsByCategory = async (category) => {
-  const validCategories = [
-    "mens-shirts",
-    "mens-tshirts",
-    "womens-dresses",
-    "womens-jewellery",
-    "womens-sarees",
-    "ornaments",
-    "beauty-items",
-    "kids-wear",
-    "shoes",
-    "bags",
-    "accessories",
-    "mens-shoes"
-  ];
-  if (!validCategories.includes(category)) {
-    throw new Error("Invalid category");
-  }
   return await Product.find({ category }).sort({ createdAt: -1 });
 };
 
-// ✅ Update Product Service
+// ✅ Update product
 export const updateProductById = async (id, updateData) => {
-  try {
-    // Mongoose updateOne/findByIdAndUpdate ensures only given fields update
-    const updatedProduct = await Product.findByIdAndUpdate(
-      id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    );
-
-    return updatedProduct; // returns null if not found
-  } catch (error) {
-    console.error("Service Error in updateProductById:", error);
-    throw error;
-  }
+  return await Product.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    { new: true, runValidators: true }
+  );
 };
 
-
-
-// ❌ Delete a product (Admin only)
+// ❌ Delete product
 export const deleteProduct = async (productId) => {
-  const deletedProduct = await Product.findByIdAndDelete(productId);
-  if (!deletedProduct) throw new Error("Product not found or delete failed");
-  return deletedProduct;
+  return await Product.findByIdAndDelete(productId);
 };
-export const searchProducts = async (keyword) => {
-  if (!keyword) {
-    throw new Error("Search keyword is required");
-  }
 
+// 🔎 Search
+export const searchProducts = async (keyword) => {
   return await Product.find({
     $or: [
       { title: { $regex: keyword, $options: "i" } },
@@ -75,18 +53,16 @@ export const searchProducts = async (keyword) => {
       { category: { $regex: keyword, $options: "i" } },
       { brand: { $regex: keyword, $options: "i" } },
       { tags: { $regex: keyword, $options: "i" } },
-    ]
+    ],
   });
 };
 
-
-
-// 🌟 Get featured products
+// 🌟 Featured
 export const getFeaturedProducts = async () => {
   return await Product.find({ isFeatured: true });
 };
 
-// 💬 Add a review
+// 💬 Review
 export const addReview = async (productId, review) => {
   const product = await Product.findById(productId);
   if (!product) throw new Error("Product not found");
@@ -99,20 +75,14 @@ export const addReview = async (productId, review) => {
     date: new Date(),
   });
 
-  // Update average rating
+  // recalc avg
   const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
   product.rating = parseFloat((totalRating / product.reviews.length).toFixed(2));
 
   return await product.save();
 };
 
-
-// 🟢 Add multiple products at once
+// 🟢 Add multiple
 export const createMultipleProducts = async (productsArray) => {
-  if (!Array.isArray(productsArray) || productsArray.length === 0) {
-    throw new Error("Invalid or empty products array");
-  }
-
-  const insertedProducts = await Product.insertMany(productsArray, { ordered: false });
-  return insertedProducts;
+  return await Product.insertMany(productsArray, { ordered: false });
 };

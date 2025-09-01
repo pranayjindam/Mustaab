@@ -1,14 +1,12 @@
-import { Cart } from "../Models/Cart.model.js";
+import mongoose from "mongoose";
+import Cart from "../Models/Cart.model.js";
 
-// Create or Update Cart
+// Add or Update item in cart
 export const upsertCartItem = async (userId, newItem) => {
   let cart = await Cart.findOne({ userId });
 
   const index = cart?.items.findIndex(
-    item =>
-      item.productId.toString() === newItem.productId &&
-      item.size === newItem.size &&
-      item.color === newItem.color
+    (item) => item.productId.toString() === newItem.productId
   );
 
   if (cart) {
@@ -27,52 +25,41 @@ export const upsertCartItem = async (userId, newItem) => {
   return cart;
 };
 
-// Get Cart by User
+// Get cart
 export const getCartByUser = async (userId) => {
-  const cart = await Cart.findOne({ userId }).populate("items.productId");
-  return cart;
+  return await Cart.findOne({ userId }).populate("items.productId");
 };
 
-
+// Remove item
 export const removeCartItem = async (userId, productId) => {
-  const cart = await Cart.findOne({ user: new mongoose.Types.ObjectId(userId) });
+  const cart = await Cart.findOne({ userId: new mongoose.Types.ObjectId(userId) });
   if (!cart) return null;
 
-  cart.items = cart.items.filter(item =>
-    !(
-      item.product.toString() === productId)
+  cart.items = cart.items.filter(
+    (item) => item.productId.toString() !== productId
   );
 
-  cart.amount = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+  cart.amount = calculateAmount(cart.items);
   await cart.save();
   return cart;
 };
 
-
-
-// Clear Cart
+// Clear cart
 export const clearCart = async (userId) => {
-  return await Cart.findOneAndUpdate({ userId }, { items: [], amount: 0 }, { new: true });
+  return await Cart.findOneAndUpdate(
+    { userId },
+    { items: [], amount: 0 },
+    { new: true }
+  );
 };
 
-
-const calculateAmount = (items) => {
-  return items.reduce((acc, item) => {
-    const discountedPrice = item.price - (item.price * item.discount / 100);
-    return acc + discountedPrice * item.qty;
-  }, 0);
-};
-
-
-export const updateCartItemQty = async (userId, productId, qty, size, color) => {
+// Update quantity
+export const updateCartItemQty = async (userId, productId, qty) => {
   const cart = await Cart.findOne({ userId });
   if (!cart) throw new Error("Cart not found");
 
   const itemIndex = cart.items.findIndex(
-    (item) =>
-      item.productId.toString() === productId &&
-      item.size === size &&
-      item.color === color
+    (item) => item.productId.toString() === productId
   );
 
   if (itemIndex === -1) throw new Error("Item not found in cart");
@@ -88,5 +75,10 @@ export const updateCartItemQty = async (userId, productId, qty, size, color) => 
   return cart;
 };
 
-
-
+// Utility: calculate amount
+const calculateAmount = (items) => {
+  return items.reduce((acc, item) => {
+    const discountedPrice = item.price - (item.price * (item.discount || 0) / 100);
+    return acc + discountedPrice * item.qty;
+  }, 0);
+};
