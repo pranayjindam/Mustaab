@@ -1,5 +1,5 @@
 // services/orderService.js
-import  Order  from "../models/Order.model.js";
+import  Order  from "../Models/Order.model.js";
 
 export const orderService = {
   async createOrder(orderData) {

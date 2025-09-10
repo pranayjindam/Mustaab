@@ -1,10 +1,11 @@
+// routes/payment.routes.js
 import express from "express";
-import {createOrder,captureOrder} from "../controllers/payment.controller.js";
-import { AuthenticateUser } from "../Middlewares/auth.js";
+import { paymentController } from "../controllers/payment.controller.js";
+import { AuthenticateUser } from "../middlewares/auth.js";
 
 const paymentRouter = express.Router();
 
-paymentRouter.post("/create-order", AuthenticateUser, createOrder);
-paymentRouter.post("/capture-order", AuthenticateUser, captureOrder);
+paymentRouter.post("/create-order", AuthenticateUser, paymentController.createOrder);
+paymentRouter.post("/verify", AuthenticateUser, paymentController.verifyPayment);
 
 export default paymentRouter;

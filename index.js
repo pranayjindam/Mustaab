@@ -14,6 +14,8 @@ import { swaggerSpec, swaggerUiExpress } from './swagger.js';
 import carouselRouter from "./Routes/Carousel.routes.js";
 import recentRouter from "./Routes/Recent.routes.js";
 import categoryRouter from "./Routes/Category.routes.js";
+import orderRouter from "./Routes/Order.routes.js";
+import paymentRouter from "./Routes/Payment.routes.js";
 dotenv.config();
 const app = express();
 app.use(express.json());
@@ -52,7 +54,8 @@ app.use("/api/cart", AuthenticateUser, cartRouter);
 app.use("/api/address", AuthenticateUser, addressRouter);
 app.use("/api/review",reviewRouter);
 app.use("/api/recent",recentRouter);
-
+app.use("/api/orders",orderRouter);
+app.use("/api/payment",paymentRouter)
 //admin routes
 app.use("/api/product", ProductRouter);
 app.use("/api/carousel",carouselRouter)

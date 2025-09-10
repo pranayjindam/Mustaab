@@ -1,12 +1,11 @@
-// routes/orderRoutes.js
 import express from "express";
-import { orderController } from "../Controllers/Order.controller.js";
-import { AuthenticateUser, AuthenticateAdmin } from "../Middlewares/auth.js";
+import { orderController } from "../controllers/order.controller.js";
+import { AuthenticateUser, AuthenticateAdmin } from "../middlewares/auth.js";
 
 const orderRouter = express.Router();
 
-// ✅ User routes
 orderRouter.post("/", AuthenticateUser, orderController.createOrder);
+orderRouter.post("/verify", AuthenticateUser, orderController.verifyPayment);
 orderRouter.get("/myorders", AuthenticateUser, orderController.getUserOrders);
 orderRouter.get("/:id", AuthenticateUser, orderController.getOrderById);
 orderRouter.put("/:id/cancel", AuthenticateUser, orderController.cancelOrder);
