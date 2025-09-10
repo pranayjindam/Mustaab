@@ -1,4 +1,5 @@
 import Recent from "../Models/Recent.model.js";
+import Product from "../Models/Product.model.js"; // Your Product model
 
 export const addRecentProduct = async (userId, productId) => {
   if (!productId) throw new Error("ProductId is required");
@@ -24,12 +25,24 @@ export const addRecentProduct = async (userId, productId) => {
   return recent.products;
 };
 
+// Recent.service.js
+
 export const getRecentProducts = async (userId, limit = 10) => {
-  const recent = await Recent.findOne({ user: userId })
-    .populate("products", "name title price images category rating") // add 'name', 'title', 'rating'
+  const recent = await Recent.findOne({ user: userId }).lean();
+
+  if (!recent) return [];
+
+  // Fetch full product objects
+  const products = await Product.find({ _id: { $in: recent.products } })
+    .select("title price images category rating") // select only needed fields
     .lean();
 
-  return recent ? recent.products.slice(0, limit) : [];
+  // Sort products in the order of recent.products
+  const sortedProducts = recent.products
+    .map((id) => products.find((p) => p._id.toString() === id.toString()))
+    .filter(Boolean);
+
+  return sortedProducts.slice(0, limit);
 };
 
 

@@ -8,12 +8,12 @@ import cartRouter from "./Routes/Cart.routes.js";
 import addressRouter from "./Routes/Address.routes.js";
 import adminRouter from "./Routes/Admin.routes.js";
 import authRouter from "./Routes/Auth.routes.js";
-import { AuthenticateUser } from "./Middlewares/auth.js";
+import { AuthenticateAdmin, AuthenticateUser } from "./Middlewares/auth.js";
 import reviewRouter from "./Routes/Review.routes.js";
 import { swaggerSpec, swaggerUiExpress } from './swagger.js';
 import carouselRouter from "./Routes/Carousel.routes.js";
 import recentRouter from "./Routes/Recent.routes.js";
-
+import categoryRouter from "./Routes/Category.routes.js";
 dotenv.config();
 const app = express();
 app.use(express.json());
@@ -45,14 +45,17 @@ app.get("/", (req, res) => {
   res.status(200).send({ message: "Welcome to ecommerce API - node" });
 });
 
-// Register routes
-app.use("/api/carousel",carouselRouter)
-app.use("/api/admin", adminRouter);
+// common routes
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/cart", AuthenticateUser, cartRouter);
 app.use("/api/address", AuthenticateUser, addressRouter);
-app.use("/api/product", ProductRouter);
 app.use("/api/review",reviewRouter);
 app.use("/api/recent",recentRouter);
+
+//admin routes
+app.use("/api/product", ProductRouter);
+app.use("/api/carousel",carouselRouter)
+app.use("/api/category",categoryRouter);
+app.use("/api/admin", adminRouter);
 export { app };

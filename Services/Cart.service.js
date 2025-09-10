@@ -1,15 +1,22 @@
 import mongoose from "mongoose";
 import Cart from "../Models/Cart.model.js";
 
-// Add or Update item in cart
+// Utility: calculate amount with discount
+const calculateAmount = (items) => {
+  return items.reduce((acc, item) => {
+    const discountedPrice = item.price - (item.price * (item.discount || 0) / 100);
+    return acc + discountedPrice * item.qty;
+  }, 0);
+};
+
+// Add or update an item in the cart
 export const upsertCartItem = async (userId, newItem) => {
   let cart = await Cart.findOne({ userId });
 
-  const index = cart?.items.findIndex(
-    (item) => item.productId.toString() === newItem.productId
-  );
-
   if (cart) {
+    const index = cart.items.findIndex(
+      (item) => item.productId.toString() === newItem.productId
+    );
     if (index !== -1) {
       cart.items[index].qty += newItem.qty;
     } else {
@@ -25,13 +32,13 @@ export const upsertCartItem = async (userId, newItem) => {
   return cart;
 };
 
-// Get cart
+// Get user cart
 export const getCartByUser = async (userId) => {
   return await Cart.findOne({ userId }).populate("items.productId");
 };
 
-// Remove item
-export const removeCartItem = async (userId, productId) => {
+// Remove item from cart
+export const removeCartItemById = async (userId, productId) => {
   const cart = await Cart.findOne({ userId: new mongoose.Types.ObjectId(userId) });
   if (!cart) return null;
 
@@ -42,15 +49,6 @@ export const removeCartItem = async (userId, productId) => {
   cart.amount = calculateAmount(cart.items);
   await cart.save();
   return cart;
-};
-
-// Clear cart
-export const clearCart = async (userId) => {
-  return await Cart.findOneAndUpdate(
-    { userId },
-    { items: [], amount: 0 },
-    { new: true }
-  );
 };
 
 // Update quantity
@@ -75,10 +73,11 @@ export const updateCartItemQty = async (userId, productId, qty) => {
   return cart;
 };
 
-// Utility: calculate amount
-const calculateAmount = (items) => {
-  return items.reduce((acc, item) => {
-    const discountedPrice = item.price - (item.price * (item.discount || 0) / 100);
-    return acc + discountedPrice * item.qty;
-  }, 0);
+// Clear cart
+export const clearCartByUser = async (userId) => {
+  return await Cart.findOneAndUpdate(
+    { userId },
+    { items: [], amount: 0 },
+    { new: true }
+  );
 };

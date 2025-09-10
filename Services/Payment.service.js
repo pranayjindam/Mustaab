@@ -1,6 +1,6 @@
 import Razorpay from "razorpay";
-import Order from "../models/Order.model.js";
-import Cart from "../models/Cart.model.js";
+import Order from "../Models/Order.model.js";
+import Cart from "../Models/Cart.model.js";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,

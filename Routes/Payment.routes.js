@@ -1,6 +1,6 @@
 import express from "express";
 import {createOrder,captureOrder} from "../controllers/payment.controller.js";
-import { AuthenticateUser } from "../middlewares/auth.js";
+import { AuthenticateUser } from "../Middlewares/auth.js";
 
 const paymentRouter = express.Router();
 

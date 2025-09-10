@@ -1,7 +1,14 @@
 import Product from "../Models/Product.model.js";
+import { Category } from "../Models/Category.model.js";
 
-// 🟢 Create a new product
+// 🟢 Create a new product with dynamic category validation
 export const createProduct = async (productData) => {
+  // Validate category exists
+  const categoryExists = await Category.findOne({ name: productData.category });
+  if (!categoryExists) {
+    throw new Error(`Category "${productData.category}" does not exist.`);
+  }
+
   const product = new Product(productData);
   return await product.save();
 };
@@ -25,13 +32,20 @@ export const getProductById = async (productId) => {
   return await Product.findById(productId);
 };
 
-// 📦 Get products by category
+// 📦 Get products by category dynamically
 export const getProductsByCategory = async (category) => {
   return await Product.find({ category }).sort({ createdAt: -1 });
 };
 
-// ✅ Update product
+// ✅ Update product with dynamic category validation
 export const updateProductById = async (id, updateData) => {
+  if (updateData.category) {
+    const categoryExists = await Category.findOne({ name: updateData.category });
+    if (!categoryExists) {
+      throw new Error(`Category "${updateData.category}" does not exist.`);
+    }
+  }
+
   return await Product.findByIdAndUpdate(
     id,
     { $set: updateData },
@@ -62,7 +76,7 @@ export const getFeaturedProducts = async () => {
   return await Product.find({ isFeatured: true });
 };
 
-// 💬 Review
+// 💬 Add Review
 export const addReview = async (productId, review) => {
   const product = await Product.findById(productId);
   if (!product) throw new Error("Product not found");
@@ -75,14 +89,25 @@ export const addReview = async (productId, review) => {
     date: new Date(),
   });
 
-  // recalc avg
+  // Recalculate average rating
   const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
   product.rating = parseFloat((totalRating / product.reviews.length).toFixed(2));
 
   return await product.save();
 };
 
-// 🟢 Add multiple
+// 🟢 Add multiple products with category validation
 export const createMultipleProducts = async (productsArray) => {
+  for (const product of productsArray) {
+    const categoryExists = await Category.findOne({ name: product.category });
+    if (!categoryExists) {
+      throw new Error(`Category "${product.category}" does not exist.`);
+    }
+  }
   return await Product.insertMany(productsArray, { ordered: false });
+};
+
+// 📋 Get all unique categories dynamically
+export const getAllCategories = async () => {
+  return await Category.find().select("name -_id"); // returns only names
 };

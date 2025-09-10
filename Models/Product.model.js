@@ -1,4 +1,3 @@
-// models/Product.model.js
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
@@ -8,16 +7,8 @@ const productSchema = new mongoose.Schema(
 
     category: {
       type: String,
-      required: true,
-      enum: [
-        "womens-dresses",
-        "womens-sarees",
-        "beauty-items",
-        "kids-wear",
-        "hand-bags",
-        "accessories",
-        "womens-jewellery"
-      ],
+      required: true, // just string, no enum
+      // optional: you can validate later if you want
     },
 
     price: { type: Number, required: true },
@@ -25,24 +16,15 @@ const productSchema = new mongoose.Schema(
     rating: { type: Number, default: 0 },
     stock: { type: Number, required: true },
 
-    sizes: [String], // Optional
-    colors: [
-      {
-        name: String,
-        image: String, // Can be swatch/image
-      }
-    ],
+    sizes: [String], 
+    colors: [{ name: String, image: String }],
 
     tags: [String],
     brand: String,
     sku: String,
     weight: Number,
 
-    dimensions: {
-      width: Number,
-      height: Number,
-      depth: Number,
-    },
+    dimensions: { width: Number, height: Number, depth: Number },
 
     warrantyInformation: String,
     shippingInformation: String,
@@ -66,12 +48,7 @@ const productSchema = new mongoose.Schema(
     returnPolicy: String,
     minimumOrderQuantity: { type: Number, default: 1 },
 
-    meta: {
-      createdAt: { type: Date, default: Date.now },
-      updatedAt: { type: Date, default: Date.now },
-      barcode: String,
-      qrCode: String,
-    },
+    meta: { createdAt: { type: Date, default: Date.now }, updatedAt: { type: Date, default: Date.now }, barcode: String, qrCode: String },
 
     images: [String],
     thumbnail: String,
@@ -79,5 +56,4 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Prevent OverwriteModelError
 export default mongoose.models.Product || mongoose.model("Product", productSchema);

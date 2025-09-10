@@ -3,6 +3,7 @@ const authRouter = express.Router();
 import { handleAdminRegister } from "../Controllers/Admin.controller.js";
 import { register } from "../Controllers/User.controller.js";
 import {login} from "../Controllers/Login.controller.js";
+import { AuthenticateAdmin } from "../Middlewares/auth.js";
 
 /**
  * @swagger
@@ -75,7 +76,7 @@ authRouter.post("/signup", register);
  *       400:
  *         description: Admin already exists or invalid input
  */
-authRouter.post("/admin-register", handleAdminRegister);
+authRouter.post("/admin-register", AuthenticateAdmin,handleAdminRegister);
 
 /**
  * @swagger

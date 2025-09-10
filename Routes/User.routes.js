@@ -60,7 +60,7 @@ userRouter.post("/register", register);
  *       401:
  *         description: Unauthorized
  */
-userRouter.get("/me", AuthenticateUser, profile);
+userRouter.get(`/:id`, AuthenticateUser, profile);
 
 /**
  * @swagger
@@ -93,7 +93,7 @@ userRouter.get("/me", AuthenticateUser, profile);
  *       500:
  *         description: Server error
  */
-userRouter.put("/update", AuthenticateUser, update);
+userRouter.put(`/:id`, AuthenticateUser, update);
 
 /**
  * @swagger
@@ -111,6 +111,6 @@ userRouter.put("/update", AuthenticateUser, update);
  *       500:
  *         description: Server error
  */
-userRouter.delete("/delete", AuthenticateUser, deleteUser);
+userRouter.delete(`/:id`, AuthenticateUser, deleteUser);
 
 export default userRouter;

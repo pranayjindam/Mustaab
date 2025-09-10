@@ -9,7 +9,6 @@ import {
   searchProducts,
   getFeaturedProducts,
   addMultipleProducts,
-  getAllCategories
 } from "../Controllers/Product.controller.js";
 import { AuthenticateAdmin, AuthenticateUser } from "../Middlewares/auth.js";
 const router = express.Router();
@@ -129,17 +128,7 @@ router.get("/featured", getFeaturedProducts);
  */
 router.get("/search", searchProducts);
 
-/**
- * @swagger
- * /api/product/categories:
- *   get:
- *     summary: Get all unique product categories
- *     tags: [Products]
- *     responses:
- *       200:
- *         description: List of categories
- */
-router.get("/categories", getAllCategories);
+
 
 /**
  * @swagger

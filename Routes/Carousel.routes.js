@@ -1,9 +1,19 @@
 import express from "express";
-import { addCarouselImage, getCarouselImages } from "../Controllers/Carousel.controller.js";
+import {
+  getCarouselImages,
+  addCarouselImage,
+  getCarouselImage,
+  updateCarouselImageController,
+  deleteCarouselImageController
+} from "../Controllers/Carousel.controller.js";
 
-const carouselRouter = express.Router();
+const router = express.Router();
 
-carouselRouter.post("/add", addCarouselImage);  // Add new carousel image
-carouselRouter.get("/get", getCarouselImages);     // Get all carousel images
+// Carousel CRUD routes
+router.get("/", getCarouselImages); // Get all images
+router.post("/", addCarouselImage); // Add new image
+router.get("/:id", getCarouselImage); // Get single image
+router.put("/:id", updateCarouselImageController); // Update image
+router.delete("/:id", deleteCarouselImageController); // Delete image
 
-export default carouselRouter;
+export default router;

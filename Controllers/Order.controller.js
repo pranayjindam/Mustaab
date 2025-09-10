@@ -1,5 +1,5 @@
 // controllers/orderController.js
-import { orderService } from "../services/order.service.js";
+import { orderService } from "../Services/Order.service.js";
 
 export const orderController = {
   createOrder: async (req, res) => {
