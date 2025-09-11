@@ -1,14 +1,6 @@
 import mongoose from "mongoose";
 import Cart from "../Models/Cart.model.js";
 
-// Utility: calculate amount with discount
-const calculateAmount = (items) => {
-  return items.reduce((acc, item) => {
-    const discountedPrice =
-      item.price - (item.price * (item.discount || 0)) / 100;
-    return acc + discountedPrice * item.qty;
-  }, 0);
-};
 
 // ✅ Add or update an item in the cart
 export const upsertCartItem = async (userId, newItem) => {
@@ -42,19 +34,41 @@ export const getCartByUser = async (userId) => {
 };
 
 // ✅ Remove item from cart
-export const removeCartItemById = async (userId, productId) => {
-  const cart = await Cart.findOne({ userId });
-  if (!cart) return null;
 
-  const productIdStr = productId.toString();
-  cart.items = cart.items.filter(
-    (item) => item.productId.toString() !== productIdStr
+// Utility to calculate total cart amount
+const calculateAmount = (items) => {
+  return items.reduce((acc, item) => {
+    const discountedPrice = item.price - (item.price * (item.discount || 0) / 100);
+    return acc + discountedPrice * item.qty;
+  }, 0);
+};
+
+
+export const removeCartItemById = async (userId, productId) => {
+  const cart = await Cart.findOne({ userId: new mongoose.Types.ObjectId(userId) });
+  if (!cart) return { success: false, message: "Cart not found" };
+
+  // Ensure productId is an ObjectId
+  const productObjectId = new mongoose.Types.ObjectId(productId);
+
+  const initialLength = cart.items.length;
+
+  cart.items = cart.items.filter(item => 
+    !item.productId.equals(productObjectId) // using equals() for ObjectId comparison
   );
-const deleteItem=cart.items.
+
+  if (cart.items.length === initialLength) {
+    return { success: false, message: "Item not found in cart" };
+  }
+
   cart.amount = calculateAmount(cart.items);
   await cart.save();
 
-  return await cart.populate("items.productId");
+  return {
+    success: true,
+    message: "Item deleted successfully",
+    cart: await cart.populate("items.productId")
+  };
 };
 
 // ✅ Update quantity
