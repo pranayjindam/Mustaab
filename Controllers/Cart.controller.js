@@ -7,11 +7,16 @@ import {
   clearCartByUser,
 } from "../Services/Cart.service.js";
 
+
+
 // ✅ Add item to cart
 export const addToCart = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { productId, qty, color, size } = req.body;
+    let { productId, qty, color, size } = req.body;
+
+    // Ensure qty is a number, default to 1
+    qty = Number(qty) || 1;
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
@@ -29,9 +34,11 @@ export const addToCart = async (req, res) => {
 
     res.status(200).json(cart);
   } catch (err) {
+    console.error("Add to cart error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // ✅ Get user cart
 export const getCart = async (req, res) => {
@@ -49,7 +56,7 @@ export const updateCartItem = async (req, res) => {
   try {
     const userId = req.user.id;
     const { productId, qty } = req.body;
-
+    
     const cart = await updateCartItemQty(userId, productId, qty);
     res.status(200).json(cart);
   } catch (err) {

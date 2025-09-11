@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Cart from "../Models/Cart.model.js";
 
 
+
 // ✅ Add or update an item in the cart
 export const upsertCartItem = async (userId, newItem) => {
   let cart = await Cart.findOne({ userId });
@@ -9,24 +10,39 @@ export const upsertCartItem = async (userId, newItem) => {
   // Always store productId as ObjectId
   newItem.productId = new mongoose.Types.ObjectId(newItem.productId);
 
+  // Default qty to 1 if not provided
+  if (!newItem.qty || newItem.qty < 1) newItem.qty = 1;
+
   if (cart) {
-    const index = cart.items.findIndex(
-      (item) => item.productId.toString() === newItem.productId.toString()
+    // Check if product already exists in cart
+    const index = cart.items.findIndex(item =>
+      item.productId.equals(newItem.productId)
     );
+
     if (index !== -1) {
+      // Already in cart → increment qty by newItem.qty
       cart.items[index].qty += newItem.qty;
     } else {
+      // Not in cart → add new item
       cart.items.push(newItem);
     }
+
+    // Recalculate total
     cart.amount = calculateAmount(cart.items);
     await cart.save();
   } else {
-    const amount = calculateAmount([newItem]);
-    cart = await Cart.create({ userId, items: [newItem], amount });
+    // Create new cart
+    cart = await Cart.create({
+      userId,
+      items: [newItem],
+      amount: calculateAmount([newItem])
+    });
   }
 
   return await cart.populate("items.productId");
 };
+
+
 
 // ✅ Get user cart
 export const getCartByUser = async (userId) => {
