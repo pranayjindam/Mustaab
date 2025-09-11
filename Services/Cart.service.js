@@ -48,28 +48,26 @@ export const removeCartItemById = async (userId, productId) => {
   const cart = await Cart.findOne({ userId: new mongoose.Types.ObjectId(userId) });
   if (!cart) return { success: false, message: "Cart not found" };
 
-  // Ensure productId is an ObjectId
   const productObjectId = new mongoose.Types.ObjectId(productId);
 
   const initialLength = cart.items.length;
-
-  cart.items = cart.items.filter(item => 
-    !item.productId.equals(productObjectId) // using equals() for ObjectId comparison
-  );
+  cart.items = cart.items.filter(item => !item.productId.equals(productObjectId));
 
   if (cart.items.length === initialLength) {
     return { success: false, message: "Item not found in cart" };
   }
 
-  cart.amount = calculateAmount(cart.items);
+  // Optional: recalc total price
+  // cart.totalPrice = calculateTotal(cart.items);
+
   await cart.save();
 
-  return {
-    success: true,
-    message: "Item deleted successfully",
-    cart: await cart.populate("items.productId")
-  };
+  // Populate product details if needed
+  const populatedCart = await cart.populate("items.productId");
+
+  return { success: true, message: "Item removed successfully", cart: populatedCart };
 };
+
 
 // ✅ Update quantity
 export const updateCartItemQty = async (userId, productId, qty) => {
