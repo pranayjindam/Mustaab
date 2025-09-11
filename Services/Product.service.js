@@ -59,10 +59,11 @@ export const deleteProduct = async (productId) => {
 };
 
 // 🔎 Search
+
 export const searchProducts = async (keyword) => {
   return await Product.find({
     $or: [
-      { title: { $regex: keyword, $options: "i" } },
+      { name: { $regex: keyword, $options: "i" } },
       { description: { $regex: keyword, $options: "i" } },
       { category: { $regex: keyword, $options: "i" } },
       { brand: { $regex: keyword, $options: "i" } },
@@ -70,6 +71,7 @@ export const searchProducts = async (keyword) => {
     ],
   });
 };
+
 
 // 🌟 Featured
 export const getFeaturedProducts = async () => {

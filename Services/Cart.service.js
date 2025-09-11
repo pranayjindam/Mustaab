@@ -4,18 +4,22 @@ import Cart from "../Models/Cart.model.js";
 // Utility: calculate amount with discount
 const calculateAmount = (items) => {
   return items.reduce((acc, item) => {
-    const discountedPrice = item.price - (item.price * (item.discount || 0) / 100);
+    const discountedPrice =
+      item.price - (item.price * (item.discount || 0)) / 100;
     return acc + discountedPrice * item.qty;
   }, 0);
 };
 
-// Add or update an item in the cart
+// ✅ Add or update an item in the cart
 export const upsertCartItem = async (userId, newItem) => {
   let cart = await Cart.findOne({ userId });
 
+  // Always store productId as ObjectId
+  newItem.productId = new mongoose.Types.ObjectId(newItem.productId);
+
   if (cart) {
     const index = cart.items.findIndex(
-      (item) => item.productId.toString() === newItem.productId
+      (item) => item.productId.toString() === newItem.productId.toString()
     );
     if (index !== -1) {
       cart.items[index].qty += newItem.qty;
@@ -29,35 +33,37 @@ export const upsertCartItem = async (userId, newItem) => {
     cart = await Cart.create({ userId, items: [newItem], amount });
   }
 
-  return cart;
+  return await cart.populate("items.productId");
 };
 
-// Get user cart
+// ✅ Get user cart
 export const getCartByUser = async (userId) => {
   return await Cart.findOne({ userId }).populate("items.productId");
 };
 
-// Remove item from cart
+// ✅ Remove item from cart
 export const removeCartItemById = async (userId, productId) => {
-  const cart = await Cart.findOne({ userId: new mongoose.Types.ObjectId(userId) });
+  const cart = await Cart.findOne({ userId });
   if (!cart) return null;
 
+  const productIdStr = productId.toString();
   cart.items = cart.items.filter(
-    (item) => item.productId.toString() !== productId
+    (item) => item.productId.toString() !== productIdStr
   );
-
+const deleteItem=cart.items.
   cart.amount = calculateAmount(cart.items);
   await cart.save();
-  return cart;
+
+  return await cart.populate("items.productId");
 };
 
-// Update quantity
+// ✅ Update quantity
 export const updateCartItemQty = async (userId, productId, qty) => {
   const cart = await Cart.findOne({ userId });
   if (!cart) throw new Error("Cart not found");
 
   const itemIndex = cart.items.findIndex(
-    (item) => item.productId.toString() === productId
+    (item) => item.productId.toString() === productId.toString()
   );
 
   if (itemIndex === -1) throw new Error("Item not found in cart");
@@ -70,14 +76,16 @@ export const updateCartItemQty = async (userId, productId, qty) => {
 
   cart.amount = calculateAmount(cart.items);
   await cart.save();
-  return cart;
+
+  return await cart.populate("items.productId");
 };
 
-// Clear cart
+// ✅ Clear cart
 export const clearCartByUser = async (userId) => {
-  return await Cart.findOneAndUpdate(
+  const cart = await Cart.findOneAndUpdate(
     { userId },
     { items: [], amount: 0 },
     { new: true }
   );
+  return cart;
 };

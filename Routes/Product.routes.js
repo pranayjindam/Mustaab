@@ -126,7 +126,7 @@ router.get("/featured", getFeaturedProducts);
  *       200:
  *         description: Matching products
  */
-router.get("/search", searchProducts);
+router.get("/search/:keyword", searchProducts);
 
 
 

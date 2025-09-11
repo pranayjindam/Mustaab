@@ -68,10 +68,14 @@ export const deleteProduct = async (req, res) => {
 };
 
 // 🔎 Search products by keyword
+
+
 export const searchProducts = async (req, res) => {
   try {
-    const keyword = req.query.q?.trim();
-    if (!keyword) return res.status(400).json({ success: false, message: "Search keyword is required" });
+    const keyword = req.params.keyword?.trim();
+    if (!keyword) {
+      return res.status(400).json({ success: false, message: "Search keyword is required" });
+    }
 
     const products = await productService.searchProducts(keyword);
     res.status(200).json({ success: true, products });
@@ -79,6 +83,8 @@ export const searchProducts = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
 
 // 🌟 Get featured products
 export const getFeaturedProducts = async (req, res) => {
