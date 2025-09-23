@@ -80,7 +80,7 @@ createOrder: async (req, res) => {
   getOrderById: async (req, res) => {
     const order = await orderService.getOrderById(req.params.id);
     if (!order) return res.status(404).json({ message: "Order not found" });
-    res.json({ order });
+    res.json(order);
   },
 
   cancelOrder: async (req, res) => {
