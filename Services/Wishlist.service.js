@@ -2,21 +2,17 @@ import Wishlist from "../Models/Wishlist.model.js";
 
 // ➕ Add product to wishlist
 export const addToWishlist = async (userId, product) => {
-  if (!product || !product.productId) {
-    throw new Error("Invalid product data");
-  }
+  if (!product || !product.productId) throw new Error("Invalid product data");
 
   let wishlist = await Wishlist.findOne({ userId });
 
   if (!wishlist) {
-    // ✅ push whole product object, not product._id
     wishlist = new Wishlist({ userId, products: [product] });
   } else {
     if (!wishlist.products) wishlist.products = [];
 
-    // Check if product already exists
     const exists = wishlist.products.some(
-      (p) => p?.productId?.toString() === product.productId.toString()
+      (p) => p.productId.toString() === product.productId.toString()
     );
 
     if (exists) throw new Error("Product already in wishlist");
@@ -30,13 +26,15 @@ export const addToWishlist = async (userId, product) => {
 
 // 📥 Get wishlist
 export const getWishlistByUser = async (userId) => {
-  const wishlist = await Wishlist.findOne({ userId })
-    .populate("products.productId", "title price thumbnail");
+  const wishlist = await Wishlist.findOne({ userId }).populate(
+    "products.productId",
+    "title price thumbnail"
+  );
 
   if (!wishlist) return { userId, products: [] };
 
   const formatted = wishlist.products
-    .filter((p) => p && p.productId) // avoid nulls
+    .filter((p) => p && p.productId)
     .map((p) => ({
       _id: p._id,
       productId: p.productId._id,
@@ -48,27 +46,36 @@ export const getWishlistByUser = async (userId) => {
   return { userId: wishlist.userId, products: formatted };
 };
 
-// ❌ Remove product
-
 export const removeWishlistItem = async (userId, productId) => {
-  const wishlist = await Wishlist.findOne( userId );
+  if (!userId || !productId) throw new Error("Invalid userId or productId");
 
+  const wishlist = await Wishlist.findOne({ userId });
   if (!wishlist) throw new Error("Wishlist not found");
-  if (!wishlist.products || wishlist.products.length === 0) {
-    throw new Error("No products in wishlist");
-  }
 
-  wishlist.products = wishlist.products.filter(
-    (p) => p?.productId?.toString() !== productId.toString()
-  );
+  // Remove product safely
+  wishlist.products = wishlist.products.filter((p) => {
+    const pid = p.productId?._id?.toString() || p.productId?.toString();
+    return pid !== productId.toString();
+  });
 
   await wishlist.save();
-  return wishlist;
+
+  // Return formatted response
+  return {
+    userId: wishlist.userId,
+    products: wishlist.products.map((p) => ({
+      _id: p._id,
+      productId: p.productId._id || p.productId,
+      name: p.name,
+      price: p.price,
+      image: p.image,
+    })),
+  };
 };
 
-// 🧹 Clear all wishlist items
+// 🧹 Clear wishlist
 export const clearWishlistByUser = async (userId) => {
-  const wishlist = await Wishlist.findOne( userId );
+  const wishlist = await Wishlist.findOne({ userId });
   if (!wishlist) throw new Error("Wishlist not found");
 
   wishlist.products = [];
