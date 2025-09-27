@@ -9,7 +9,7 @@ import {
   searchProducts,
   getFeaturedProducts,
   addmultipleProducts
-} from "../controllers/product.controller.js";
+} from "../Controllers/Product.controller.js";
 import { AuthenticateAdmin } from "../middlewares/auth.js";
 
 const productRouter = express.Router();

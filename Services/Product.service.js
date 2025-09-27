@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Product } from "../models/Product.model.js";
+import { Product } from "../Models/Product.model.js";
 
 
 export const createProduct = async (data) => {

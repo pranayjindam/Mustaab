@@ -1,4 +1,4 @@
-import * as productService from "../services/product.service.js";
+import * as productService from "../Services/Product.service.js";
 
 
 export const createProduct = async (req, res) => {
