@@ -1,4 +1,4 @@
-import { Category } from "../models/Category.model.js";
+import { Category } from "../Models/Category.model.js";
 
 export const createCategory = async (data) => {
   // Always store parent as array
