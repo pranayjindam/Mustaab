@@ -10,7 +10,7 @@ import {
   getFeaturedProducts,
   addmultipleProducts
 } from "../Controllers/Product.controller.js";
-import { AuthenticateAdmin } from "../middlewares/auth.js";
+import { AuthenticateAdmin } from "../Middlewares/auth.js";
 
 const productRouter = express.Router();
 
