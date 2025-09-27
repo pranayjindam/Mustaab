@@ -1,28 +1,45 @@
-// services/categoryService.js
-import { Category } from "../Models/Category.model.js";
+import { Category } from "../models/Category.model.js";
 
-// Get all categories
-export const getAllCategoriesService = async () => {
-  return await Category.find();
-};
+export const createCategory = async (data) => {
+  // Always store parent as array
+  const parentArray = data.level === "main" ? [] : Array.isArray(data.parent) ? data.parent : [data.parent];
+  data.parent = parentArray;
 
-// Get category by ID
-export const getCategoryByIdService = async (id) => {
-  return await Category.findById(id);
-};
+  // Allow same name under different parents
+  const existing = await Category.findOne({
+    name: data.name,
+    level: data.level,
+    parent: { $all: parentArray } // ensures exact parent(s) match
+  });
 
-// Create category
-export const createCategoryService = async (data) => {
+  if (existing) {
+    // already exists under same parent(s), return it
+    return existing;
+  }
+
   const category = new Category(data);
-  return await category.save();
+  return category.save();
+};
+
+
+
+// Get all categories (with parent populated)
+export const getAllCategories = async () => {
+  return Category.find().populate("parent", "name level").sort({ level: 1, name: 1 });
+};
+
+// Get by Id
+export const getCategoryById = async (id) => {
+  return Category.findById(id).populate("parent", "name level");
 };
 
 // Update category
-export const updateCategoryService = async (id, data) => {
-  return await Category.findByIdAndUpdate(id, data, { new: true });
+export const updateCategory = async (id, data) => {
+  if (!data.parent) data.parent = [];
+  return Category.findByIdAndUpdate(id, data, { new: true }).populate("parent", "name level");
 };
 
 // Delete category
-export const deleteCategoryService = async (id) => {
-  return await Category.findByIdAndDelete(id);
+export const deleteCategory = async (id) => {
+  return Category.findByIdAndDelete(id);
 };

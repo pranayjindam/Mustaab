@@ -1,5 +1,5 @@
 import Recent from "../Models/Recent.model.js";
-import Product from "../Models/Product.model.js"; // Your Product model
+import {Product} from "../Models/Product.model.js"; // Your Product model
 
 export const addRecentProduct = async (userId, productId) => {
   if (!productId) throw new Error("ProductId is required");

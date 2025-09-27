@@ -1,4 +1,4 @@
-import Product from "../Models/Product.model.js";
+import {Product} from "../Models/Product.model.js";
 import {
   upsertCartItem,
   getCartByUser,

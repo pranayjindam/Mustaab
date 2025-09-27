@@ -4,56 +4,27 @@ const productSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: String,
-
     category: {
-      type: String,
-      required: true, // just string, no enum
-      // optional: you can validate later if you want
+      main: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
+      sub: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+      type: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
     },
-
-    price: { type: Number, required: true },
-    discountPercentage: { type: Number, default: 0 },
-    rating: { type: Number, default: 0 },
-    stock: { type: Number, required: true },
-
-    sizes: [String], 
-    colors: [{ name: String, image: String }],
-
     tags: [String],
-    brand: String,
-    sku: String,
-    weight: Number,
-
-    dimensions: { width: Number, height: Number, depth: Number },
-
-    warrantyInformation: String,
-    shippingInformation: String,
-
-    availabilityStatus: {
-      type: String,
-      enum: ["In Stock", "Out of Stock", "Limited"],
-      default: "In Stock",
-    },
-
-    reviews: [
+    sizes: [String],
+    colors: [
       {
-        rating: Number,
-        comment: String,
-        date: { type: Date, default: Date.now },
-        reviewerName: String,
-        reviewerEmail: String,
+        name: String,
+        image: String,
       },
     ],
-
-    returnPolicy: String,
-    minimumOrderQuantity: { type: Number, default: 1 },
-
-    meta: { createdAt: { type: Date, default: Date.now }, updatedAt: { type: Date, default: Date.now }, barcode: String, qrCode: String },
-
+    price: { type: Number, required: true },
+    discount: { type: Number, default: 0 },
+    stock: { type: Number, required: true },
     images: [String],
     thumbnail: String,
+    isFeatured: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-export default mongoose.models.Product || mongoose.model("Product", productSchema);
+export const Product = mongoose.models.Product || mongoose.model("Product", productSchema);

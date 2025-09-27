@@ -1,115 +1,107 @@
-import Product from "../Models/Product.model.js";
-import { Category } from "../Models/Category.model.js";
+import mongoose from "mongoose";
+import { Product } from "../models/Product.model.js";
 
-// 🟢 Create a new product with dynamic category validation
-export const createProduct = async (productData) => {
-  // Validate category exists
-  const categoryExists = await Category.findOne({ name: productData.category });
-  if (!categoryExists) {
-    throw new Error(`Category "${productData.category}" does not exist.`);
+
+export const createProduct = async (data) => {
+  console.log("Received product data:", data);
+
+  if (!data.category || !data.category.main) {
+    throw new Error("Category main ID is required");
   }
+
+  const productData = {
+    ...data,
+    category: {
+      main: new mongoose.Types.ObjectId(data.category.main), // ✅ use 'new'
+      sub: data.category.sub ? new mongoose.Types.ObjectId(data.category.sub) : null,
+      type: data.category.type ? new mongoose.Types.ObjectId(data.category.type) : null,
+    },
+    price: Number(data.price),
+    stock: Number(data.stock),
+    discount: Number(data.discount || 0),
+  };
+
+  console.log("Converted product data for DB:", productData);
 
   const product = new Product(productData);
-  return await product.save();
+  const saved = await product.save();
+
+  console.log("Saved product:", saved);
+  return saved;
 };
-
-// 📋 Get all products with pagination
-export const getAllProducts = async (page = 1, limit = 20) => {
-  const skip = (page - 1) * limit;
-
-  const products = await Product.find()
-    .select("title price images category brand")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
-
-  const total = await Product.countDocuments();
-  return { products, total, page, pages: Math.ceil(total / limit) };
-};
-
-// 🔍 Get a single product by ID
-export const getProductById = async (productId) => {
-  return await Product.findById(productId);
-};
-
-// 📦 Get products by category dynamically
-export const getProductsByCategory = async (category) => {
-  return await Product.find({ category }).sort({ createdAt: -1 });
-};
-
-// ✅ Update product with dynamic category validation
-export const updateProductById = async (id, updateData) => {
-  if (updateData.category) {
-    const categoryExists = await Category.findOne({ name: updateData.category });
-    if (!categoryExists) {
-      throw new Error(`Category "${updateData.category}" does not exist.`);
-    }
+export const addMultipleProducts = async (productsArray) => {
+  if (!Array.isArray(productsArray) || productsArray.length === 0) {
+    throw new Error("Products array is required and cannot be empty");
   }
 
-  return await Product.findByIdAndUpdate(
-    id,
-    { $set: updateData },
-    { new: true, runValidators: true }
-  );
+  const formattedProducts = productsArray.map((data) => {
+    if (!data.category || !data.category.main) {
+      throw new Error("Category main ID is required for each product");
+    }
+
+    return {
+      ...data,
+      category: {
+        main: new mongoose.Types.ObjectId(data.category.main),
+        sub: data.category.sub ? new mongoose.Types.ObjectId(data.category.sub) : null,
+        type: data.category.type ? new mongoose.Types.ObjectId(data.category.type) : null,
+      },
+      price: Number(data.price),
+      stock: Number(data.stock),
+      discount: Number(data.discount || 0),
+    };
+  });
+
+  const savedProducts = await Product.insertMany(formattedProducts);
+  console.log(`${savedProducts.length} products added successfully`);
+  return savedProducts;
 };
 
-// ❌ Delete product
-export const deleteProduct = async (productId) => {
-  return await Product.findByIdAndDelete(productId);
+export const getAllProducts = async () => {
+  return Product.find()
+    .populate("category.main category.sub category.type")
+    .sort({ createdAt: -1 });
 };
 
-// 🔎 Search
+export const getProductById = async (id) => {
+  return Product.findById(id).populate("category.main category.sub category.type");
+};
+
+export const getProductsByCategory = async (categoryId) => {
+  return Product.find({
+    $or: [
+      { "category.main": categoryId },
+      { "category.sub": categoryId },
+      { "category.type": categoryId },
+    ],
+  }).populate("category.main category.sub category.type");
+};
+
+export const updateProduct = async (id, data) => {
+  const productData = {
+    ...data,
+    category: {
+      main: data.category.main ? mongoose.Types.ObjectId(data.category.main) : null,
+      sub: data.category.sub ? mongoose.Types.ObjectId(data.category.sub) : null,
+      type: data.category.type ? mongoose.Types.ObjectId(data.category.type) : null,
+    },
+    price: Number(data.price),
+    stock: Number(data.stock),
+    discount: Number(data.discount),
+  };
+
+  return Product.findByIdAndUpdate(id, productData, { new: true });
+};
+
+export const deleteProduct = async (id) => {
+  return Product.findByIdAndDelete(id);
+};
 
 export const searchProducts = async (keyword) => {
-  return await Product.find({
-    $or: [
-      { name: { $regex: keyword, $options: "i" } },
-      { description: { $regex: keyword, $options: "i" } },
-      { category: { $regex: keyword, $options: "i" } },
-      { brand: { $regex: keyword, $options: "i" } },
-      { tags: { $regex: keyword, $options: "i" } },
-    ],
-  });
+  const regex = new RegExp(keyword, "i");
+  return Product.find({ title: regex }).populate("category.main category.sub category.type");
 };
 
-
-// 🌟 Featured
 export const getFeaturedProducts = async () => {
-  return await Product.find({ isFeatured: true });
-};
-
-// 💬 Add Review
-export const addReview = async (productId, review) => {
-  const product = await Product.findById(productId);
-  if (!product) throw new Error("Product not found");
-
-  product.reviews.push({
-    rating: review.rating,
-    comment: review.comment,
-    reviewerName: review.reviewerName,
-    reviewerEmail: review.reviewerEmail,
-    date: new Date(),
-  });
-
-  // Recalculate average rating
-  const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
-  product.rating = parseFloat((totalRating / product.reviews.length).toFixed(2));
-
-  return await product.save();
-};
-
-// 🟢 Add multiple products with category validation
-export const createMultipleProducts = async (productsArray) => {
-  for (const product of productsArray) {
-    const categoryExists = await Category.findOne({ name: product.category });
-    if (!categoryExists) {
-      throw new Error(`Category "${product.category}" does not exist.`);
-    }
-  }
-  return await Product.insertMany(productsArray, { ordered: false });
-};
-
-// 📋 Get all unique categories dynamically
-export const getAllCategories = async () => {
-  return await Category.find().select("name -_id"); // returns only names
+  return Product.find({ isFeatured: true }).populate("category.main category.sub category.type");
 };
