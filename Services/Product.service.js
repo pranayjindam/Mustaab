@@ -19,6 +19,7 @@ export const createProduct = async (data) => {
     price: Number(data.price),
     stock: Number(data.stock),
     discount: Number(data.discount || 0),
+    
   };
 
   console.log("Converted product data for DB:", productData);
@@ -64,7 +65,20 @@ export const getAllProducts = async () => {
 };
 
 export const getProductById = async (id) => {
-  return Product.findById(id).populate("category.main category.sub category.type");
+  // Validate ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid product ID");
+  }
+
+  // Fetch product
+  const product = await Product.findById(id)
+    .populate("category.main category.sub category.type");
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  return product;
 };
 
 export const getProductsByCategory = async (categoryId) => {
@@ -78,20 +92,31 @@ export const getProductsByCategory = async (categoryId) => {
 };
 
 export const updateProduct = async (id, data) => {
-  const productData = {
-    ...data,
-    category: {
-      main: data.category.main ? mongoose.Types.ObjectId(data.category.main) : null,
-      sub: data.category.sub ? mongoose.Types.ObjectId(data.category.sub) : null,
-      type: data.category.type ? mongoose.Types.ObjectId(data.category.type) : null,
-    },
-    price: Number(data.price),
-    stock: Number(data.stock),
-    discount: Number(data.discount),
-  };
+  const productData = {};
+
+  // Update price, stock, discount only if provided
+  if (data.price !== undefined) productData.price = Number(data.price);
+  if (data.stock !== undefined) productData.stock = Number(data.stock);
+  if (data.discount !== undefined) productData.discount = Number(data.discount);
+
+  // Merge other fields (like name, description, brand, etc.)
+  for (const key of Object.keys(data)) {
+    if (!['price', 'stock', 'discount', 'category'].includes(key)) {
+      productData[key] = data[key];
+    }
+  }
+
+  // Handle category separately
+  if (data.category) {
+    productData.category = {};
+    if (data.category.main) productData.category.main = mongoose.Types.ObjectId(data.category.main);
+    if (data.category.sub) productData.category.sub = mongoose.Types.ObjectId(data.category.sub);
+    if (data.category.type) productData.category.type = mongoose.Types.ObjectId(data.category.type);
+  }
 
   return Product.findByIdAndUpdate(id, productData, { new: true });
 };
+
 
 export const deleteProduct = async (id) => {
   return Product.findByIdAndDelete(id);

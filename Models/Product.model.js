@@ -23,6 +23,9 @@ const productSchema = new mongoose.Schema(
     images: [String],
     thumbnail: String,
     isFeatured: { type: Boolean, default: false },
+    isReturnable: { type: Boolean, default: false },
+    isExchangeable: { type: Boolean, default: false },
+    isCancelable: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

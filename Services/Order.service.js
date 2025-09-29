@@ -1,55 +1,48 @@
-// services/orderService.js
-import  Order  from "../Models/Order.model.js";
+import Order from "../Models/Order.model.js";
 
 export const orderService = {
-  async createOrder(orderData) {
+  createOrder: async (orderData) => {
     const order = new Order(orderData);
     return await order.save();
   },
 
-  async getUserOrders(userId) {
-    return await Order.find({ user: userId }).populate("orderItems.product");
+  getUserOrders: async (userId) => {
+    return await Order.find({ user: userId }).sort({ createdAt: -1 });
   },
 
-  async getOrderById(id) {
-    return await Order.findById(id).populate("orderItems.product user");
+  getOrderById: async (orderId) => {
+    return await Order.findById(orderId);
   },
 
-  async getAllOrders() {
-    return await Order.find({})
-      .populate("user", "name email")
-      .populate("orderItems.product");
-  },
-
-  async updateOrderStatus(orderId, status) {
-    const order = await Order.findById(orderId);
-    if (!order) throw new Error("Order not found");
-
-    order.orderStatus = status;
+  cancelOrder: async (orderId, userId) => {
+    const order = await Order.findOne({ _id: orderId, user: userId });
+    if (!order) throw new Error("Order not found or unauthorized");
+    order.status = "Cancelled";
     return await order.save();
   },
 
-  async cancelOrder(orderId, userId) {
-    const order = await Order.findById(orderId);
-    if (!order) throw new Error("Order not found");
-
-    if (order.user.toString() !== userId.toString()) {
-      throw new Error("Unauthorized");
-    }
-
-    order.orderStatus = "cancelled";
+  returnOrder: async (orderId, userId) => {
+    const order = await Order.findOne({ _id: orderId, user: userId });
+    if (!order) throw new Error("Order not found or unauthorized");
+    order.status = "Returned";
     return await order.save();
   },
 
-  async returnOrder(orderId, userId) {
+  exchangeOrder: async (orderId, userId) => {
+    const order = await Order.findOne({ _id: orderId, user: userId });
+    if (!order) throw new Error("Order not found or unauthorized");
+    order.status = "Exchanged";
+    return await order.save();
+  },
+
+  updateOrderStatus: async (orderId, status) => {
     const order = await Order.findById(orderId);
     if (!order) throw new Error("Order not found");
-
-    if (order.user.toString() !== userId.toString()) {
-      throw new Error("Unauthorized");
-    }
-
-    order.orderStatus = "returned";
+    order.status = status;
     return await order.save();
+  },
+
+  getAllOrders: async () => {
+    return await Order.find().sort({ createdAt: -1 });
   },
 };

@@ -1,9 +1,10 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import http from "http"; // 👈 new
-import { Server } from "socket.io"; // 👈 new
-
+import http from "http";
+import { Server } from "socket.io";
+import cors from "cors";
+import express from "express";
 import { connectDb } from "./config/db.js";
 import { initializeAdminUser } from "./Services/Admin.service.js";
 import { app } from "./index.js";
@@ -13,17 +14,36 @@ const PORT = process.env.PORT || 2000;
 const startServer = async () => {
   try {
     console.log("🚀 Starting server...");
+
+    // Connect to MongoDB
     await connectDb();
 
     console.log("👤 Initializing admin user...");
     await initializeAdminUser();
 
-    console.log(`🌐 Starting Express + Socket.IO on port ${PORT}...`);
+    // -----------------------------
+    // ✅ Express Middleware
+    // -----------------------------
+    // Enable JSON parsing
+    app.use(express.json());
 
+    // Enable CORS for frontend (replace with your frontend URL in production)
+    app.use(
+      cors({
+        origin: "http://localhost:1000", // frontend origin
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      })
+    );
+
+    // -----------------------------
     // ✅ Create HTTP server from Express app
+    // -----------------------------
     const server = http.createServer(app);
 
+    // -----------------------------
     // ✅ Attach Socket.IO
+    // -----------------------------
     const io = new Server(server, {
       cors: {
         origin: "*", // allow frontend (you can restrict later)
@@ -31,11 +51,10 @@ const startServer = async () => {
       },
     });
 
-    // ✅ Handle socket connections
     io.on("connection", (socket) => {
       console.log("⚡ Client connected:", socket.id);
 
-      // Example: when an order is created in backend, broadcast
+      // Example: broadcast new orders
       socket.on("createOrder", (order) => {
         io.emit("newOrder", order);
       });
@@ -45,9 +64,11 @@ const startServer = async () => {
       });
     });
 
+    // -----------------------------
     // ✅ Start server
+    // -----------------------------
     server.listen(PORT, () => {
-      console.log(`✅ Server is live at http://localhost:${PORT}`);
+      console.log(`🌐 Server live at http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error("❌ Server failed to start:", error.message);

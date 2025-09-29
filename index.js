@@ -17,6 +17,7 @@ import categoryRouter from "./Routes/Category.routes.js";
 import orderRouter from "./Routes/Order.routes.js";
 import paymentRouter from "./Routes/Payment.routes.js";
 import wishlistRouter from "./Routes/Wishlist.routes.js";
+import returnRequestRouter from "./Routes/ReturnRequests.routes.js";
 dotenv.config();
 const app = express();
 app.use(express.json());
@@ -58,6 +59,7 @@ app.use("/api/recent",recentRouter);
 app.use("/api/orders",orderRouter);
 app.use("/api/payment",paymentRouter);
 app.use("/api/wishlist", AuthenticateUser, wishlistRouter);
+app.use("/api/return-requests",returnRequestRouter)
 //admin routes
 app.use("/api/product", ProductRouter);
 app.use("/api/carousel",carouselRouter)

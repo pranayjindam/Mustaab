@@ -1,6 +1,5 @@
-import { orderService } from "../Services/Order.service.js";
 import Razorpay from "razorpay";
-import crypto from "crypto";
+import { orderService } from "../Services/Order.service.js";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -10,96 +9,124 @@ const razorpay = new Razorpay({
 export const orderController = {
 createOrder: async (req, res) => {
   try {
-    const { orderItems, shippingAddress, paymentMethod, paymentResult } = req.body;
+    console.log("📦 Incoming order body:", req.body); // debug log
 
-    if (!orderItems || orderItems.length === 0)
-      return res.status(400).json({ message: "No items provided" });
-
-    if (!shippingAddress) return res.status(400).json({ message: "Address missing" });
-
-    const totalPrice = orderItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-
-    const orderData = {
+    const order = await orderService.createOrder({
+      ...req.body,   // ✅ take data directly
       user: req.user._id,
-      orderItems,
-      shippingAddress,
-      paymentMethod,
-      totalPrice,
-      paymentResult: paymentMethod === "COD" ? {} : paymentResult || {},
-    };
-
-    const order = await orderService.createOrder(orderData);
+    });
 
     res.status(201).json(order);
   } catch (err) {
+    console.error("❌ Order creation error:", err);
     res.status(500).json({ message: err.message });
   }
-}
-,
+},
+
+
+createRazorpayOrder: async (req, res) => {
+  try {
+    let { amount } = req.body;
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+    amount = Number(amount); // ensure number
+console.log("amount is",amount);
+    const options = {
+      amount,
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`,
+    };
+    console.log(options);
+    const order = await razorpay.orders.create(options);
+    res.json(order);
+  } catch (err) {
+    console.error("Razorpay create order error:", err);
+    res.status(500).json({ message: err.message });
+  }
+},
 
   verifyPayment: async (req, res) => {
     try {
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, items, addressId } =
-        req.body;
-
-      const generated_signature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest("hex");
-
-      if (generated_signature !== razorpay_signature)
-        return res.status(400).json({ message: "Payment verification failed" });
-
+     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, items, shippingAddress } = req.body;
+if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature)
+  return res.status(400).json({ success: false, message: "Missing payment details" });
+      // Verify signature here if needed
       const order = await orderService.createOrder({
-        user: req.user._id,
         orderItems: items,
-        shippingAddress: addressId,
+        shippingAddress,
         paymentMethod: "Razorpay",
-        paymentResult: {
-          razorpayOrderId: razorpay_order_id,
-          razorpayPaymentId: razorpay_payment_id,
-          razorpaySignature: razorpay_signature,
-        },
-        totalPrice: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        paymentResult: { razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id, razorpaySignature: razorpay_signature },
+        totalPrice: items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+        user: req.user._id,
       });
+      res.json({ success: true, order });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  },
 
-      res.json({ order });
+  getUserOrders: async (req, res) => {
+    try {
+      const orders = await orderService.getUserOrders(req.user._id);
+      res.json(orders);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   },
 
-  getUserOrders: async (req, res) => {
-    const orders = await orderService.getUserOrders(req.user._id);
-    res.json({ orders });
-  },
-
   getOrderById: async (req, res) => {
-    const order = await orderService.getOrderById(req.params.id);
-    if (!order) return res.status(404).json({ message: "Order not found" });
-    res.json(order);
+    try {
+      const order = await orderService.getOrderById(req.params.id);
+      if (!order) return res.status(404).json({ message: "Order not found" });
+      res.json(order);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
   },
 
   cancelOrder: async (req, res) => {
-    const order = await orderService.cancelOrder(req.params.id, req.user._id);
-    res.json({ order });
+    try {
+      const order = await orderService.cancelOrder(req.params.id, req.user._id);
+      res.json(order);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
   },
 
   returnOrder: async (req, res) => {
-    const order = await orderService.returnOrder(req.params.id, req.user._id);
-    res.json({ order });
+    try {
+      const order = await orderService.returnOrder(req.params.id, req.user._id);
+      res.json(order);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
   },
 
-  getAllOrders: async (req, res) => {
-    const orders = await orderService.getAllOrders();
-    res.json({ orders });
+  exchangeOrder: async (req, res) => {
+    try {
+      const order = await orderService.exchangeOrder(req.params.id, req.user._id);
+      res.json(order);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
   },
 
   updateOrderStatus: async (req, res) => {
-    const order = await orderService.updateOrderStatus(req.params.id, req.body.status);
-    res.json({ order });
+    try {
+      const order = await orderService.updateOrderStatus(req.params.id, req.body.status);
+      res.json(order);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  },
+
+  getAllOrders: async (req, res) => {
+    try {
+      const orders = await orderService.getAllOrders();
+      res.json(orders);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
   },
 };
