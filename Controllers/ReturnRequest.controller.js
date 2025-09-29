@@ -1,4 +1,4 @@
-import * as returnService from "../services/returnRequest.service.js";
+import * as returnService from "../Services/returnRequest.service.js";
 
 // User: Create request
 export const createRequest = async (req, res) => {
