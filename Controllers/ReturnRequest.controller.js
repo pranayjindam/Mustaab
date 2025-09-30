@@ -3,15 +3,23 @@ import * as returnService from "../Services/ReturnRequest.service.js";
 // User: Create request
 export const createRequest = async (req, res) => {
   try {
-    const userId = req.user._id; // from auth middleware
-    const { orderId, productId, type, reason, images, newVariant } = req.body;
+    const userId = req.user._id;
+    const { orderId, productId, type, reason, pickupAddress, newColor, newSize } = req.body;
+
+    if (!orderId || !productId || !type || !reason) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    const images = req.files?.map(file => file.path); // handle uploaded images
+    const newVariant = type === "exchange" ? { size: newSize, color: newColor } : undefined;
 
     const request = await returnService.createReturnRequest({
       userId,
       orderId,
       productId,
-      type,
+      type: type.toLowerCase(),  // ensure lowercase
       reason,
+      pickupAddress,
       images,
       newVariant,
     });
@@ -21,6 +29,9 @@ export const createRequest = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
+
 
 // User: Get own requests
 export const getMyRequests = async (req, res) => {

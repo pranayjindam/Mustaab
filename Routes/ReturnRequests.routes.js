@@ -10,7 +10,12 @@ import { AuthenticateUser, AuthenticateAdmin } from "../Middlewares/auth.js";
 const returnRequestRouter = express.Router();
 
 // User
-returnRequestRouter.post("/",AuthenticateUser , createRequest);
+import multer from "multer";
+
+const upload = multer({ dest: "uploads/" }); // or configure storage as needed
+
+// For creating return requests with images
+returnRequestRouter.post("/", AuthenticateUser, upload.array("images"), createRequest);
 returnRequestRouter.get("/my", AuthenticateUser, getMyRequests);
 
 returnRequestRouter.get("/", AuthenticateAdmin, getAllRequests);

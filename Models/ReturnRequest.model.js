@@ -15,6 +15,8 @@ const returnRequestSchema = new mongoose.Schema({
     color: { type: String },
   },
 
+  pickupAddress: { type: String }, // ✅ added pickup address
+
   status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
