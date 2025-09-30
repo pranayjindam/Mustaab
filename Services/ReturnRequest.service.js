@@ -1,4 +1,4 @@
-import {ReturnRequest} from "../Models/ReturnRequest.model.js";
+import ReturnRequest from "../Models/ReturnRequest.model.js";
 
 export const createReturnRequest = async (data) => {
   const request = new ReturnRequest(data);

@@ -7,7 +7,7 @@ const orderRouter = express.Router();
 // User routes
 orderRouter.post("/", AuthenticateUser, orderController.createOrder);
 orderRouter.post("/razorpay/create", AuthenticateUser, orderController.createRazorpayOrder);
-orderRouter.post("/razorpay/verify", AuthenticateUser, orderController.verifyPayment);
+orderRouter.post("/razorpay/verify", AuthenticateUser, orderController.verifyRazorpayPayment);
 orderRouter.get("/myorders", AuthenticateUser, orderController.getUserOrders);
 orderRouter.get("/:id", AuthenticateUser, orderController.getOrderById);
 orderRouter.put("/:id/cancel", AuthenticateUser, orderController.cancelOrder);
