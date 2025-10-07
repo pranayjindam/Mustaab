@@ -1,7 +1,6 @@
 import express from "express";
 import { orderController } from "../Controllers/Order.controller.js";
 import { AuthenticateUser, AuthenticateAdmin } from "../Middlewares/auth.js";
-
 const orderRouter = express.Router();
 
 // ------------------------------
@@ -22,7 +21,6 @@ orderRouter.put("/:id/return", AuthenticateUser, orderController.returnOrder);
 orderRouter.put("/:id/exchange", AuthenticateUser, orderController.exchangeOrder);
 // Routes/order.routes.js
 orderRouter.get("/:id/track", AuthenticateUser, orderController.trackShipment);
-
 // ------------------------------
 // Admin Routes
 // ------------------------------

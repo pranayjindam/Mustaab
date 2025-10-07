@@ -1,5 +1,5 @@
 import Order from "../Models/Order.model.js";
-import ReturnRequest from "../Models/ReturnRequest.model.js";
+// import ReturnRequest from "../Models/ReturnRequest.model.js";
 import { orderService } from "../Services/Order.service.js";
 import { shipRocketService } from "../Services/ShipRocket.service.js";
 import { sendOTP, verifyOTP } from "../Services/Otp.service.js";  // ✅ Twilio OTP service
@@ -14,50 +14,136 @@ export const orderController = {
   // ------------------------------
   // Create Normal Order (COD / Prepaid)
   // ------------------------------
-  createOrder: async (req, res) => {
+ createOrder: async (req, res) => {
     try {
       const { orderItems, shippingAddress, paymentMethod, totalPrice } = req.body;
-      console.log("Create Order request received");
+      if (!orderItems || orderItems.length === 0)
+        return res.status(400).json({ message: "No order items" });
 
-      if (!orderItems || orderItems.length === 0) {
-        return res.status(400).json({ message: "No order items provided" });
-      }
-
-      const order = await orderService.createOrder({
+      const order = new Order({
+        user: req.user._id,
         orderItems,
         shippingAddress,
         paymentMethod,
         totalPrice,
-        user: req.user._id,
       });
 
-      console.log("✅ Order created:", order._id);
+      await order.save();
 
-      // 2️⃣ Create shipment in Shiprocket
       try {
-        const shipment = await shipRocketService.createOrder(order);
-        console.log("✅ Shiprocket response:", shipment);
-
-        order.shipmentId = shipment.shipment_id;
-        order.shiprocketOrderId = shipment.order_id;
-        order.awbCode = shipment.awb_code;
+        const shiprocketData = await shipRocketService.createOrder(order);
+        order.shipmentId = shiprocketData.shipment_id;
+        order.shiprocketOrderId = shiprocketData.shiprocket_order_id;
+        order.awbCode = shiprocketData.awb_code;
         await order.save();
-
-        console.log("Order updated with Shiprocket info:", {
-          shipmentId: order.shipmentId,
-          shiprocketOrderId: order.shiprocketOrderId,
-          awbCode: order.awbCode,
-        });
+        console.log("🚚 Shiprocket order created:", shiprocketData);
       } catch (err) {
-        console.error("⚠️ Shiprocket order creation failed:", err.message);
+        console.error("⚠️ Shiprocket order failed:", err.message);
       }
 
       res.status(201).json(order);
     } catch (err) {
-      console.error("❌ Create order error:", err);
+      console.error("❌ Create order error:", err.message);
+      res.status(500).json({ message: "Server error" });
+    }
+  },
+
+  createRazorpayOrder: async (req, res) => {
+    try {
+      const { amount } = req.body;
+      if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
+
+      const options = { amount: Number(amount), currency: "INR", receipt: `receipt_${Date.now()}` };
+      const order = await razorpay.orders.create(options);
+      res.json(order);
+    } catch (err) {
+      console.error("❌ Razorpay create order error:", err.message);
       res.status(500).json({ message: err.message });
     }
   },
+
+  verifyRazorpayPayment: async (req, res) => {
+    try {
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, items, shippingAddress } = req.body;
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature)
+        return res.status(400).json({ message: "Missing payment details" });
+
+      const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+      const order = await orderService.createOrder({
+        orderItems: items,
+        shippingAddress,
+        paymentMethod: "Razorpay",
+        paymentResult: { razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id, razorpaySignature: razorpay_signature },
+        totalPrice,
+        user: req.user._id,
+      });
+
+      try {
+        const shiprocketRes = await shipRocketService.createOrder(order);
+        order.shipmentId = shiprocketRes.shipment_id;
+        order.shiprocketOrderId = shiprocketRes.shiprocket_order_id;
+        order.awbCode = shiprocketRes.awb_code;
+        await order.save();
+      } catch (err) {
+        console.error("⚠️ Shiprocket creation failed:", err.message);
+      }
+
+      res.json({ success: true, order });
+    } catch (err) {
+      console.error("❌ Razorpay verify error:", err.message);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  },
+
+  codRequestOtp: async (req, res) => {
+    try {
+      const { mobile } = req.body;
+      if (!mobile) return res.status(400).json({ success: false, message: "Mobile number required" });
+      const result = await sendOTP(mobile);
+      res.status(200).json(result);
+    } catch (err) {
+      console.error("❌ COD OTP send error:", err.message);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  },
+
+  codVerifyOtp: async (req, res) => {
+    try {
+      const { mobile, otp, orderItems, shippingAddress, totalPrice } = req.body;
+      if (!mobile || !otp) return res.status(400).json({ message: "Missing OTP or mobile number" });
+
+      const verified = await verifyOTP(mobile, otp);
+      if (!verified) return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+
+      const order = await orderService.createOrder({
+        orderItems,
+        shippingAddress,
+        paymentMethod: "COD",
+        totalPrice,
+        user: req.user._id,
+      });
+
+      try {
+        const shipment = await shipRocketService.createOrder(order);
+        order.shipmentId = shipment.shipment_id;
+        order.shiprocketOrderId = shipment.shiprocket_order_id;
+        order.awbCode = shipment.awb_code;
+        await order.save();
+        console.log("🚚 Shiprocket COD order created:", order.awbCode);
+      } catch (err) {
+        console.error("⚠️ Shiprocket COD creation failed:", err.message);
+      }
+
+      res.status(201).json({ success: true, message: "COD order placed successfully", order });
+    } catch (err) {
+      console.error("❌ COD Verify Error:", err.message);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  },
+// Create order
+
+
 
   // ------------------------------
   // Create Razorpay Order
@@ -86,113 +172,8 @@ export const orderController = {
   // ------------------------------
   // Verify Razorpay Payment + Create DB Order + Shiprocket
   // ------------------------------
-  verifyRazorpayPayment: async (req, res) => {
-    try {
-      const {
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature,
-        items,
-        shippingAddress,
-      } = req.body;
 
-      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-        return res.status(400).json({ message: "Missing payment details" });
-      }
 
-      const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-      const order = await orderService.createOrder({
-        orderItems: items,
-        shippingAddress,
-        paymentMethod: "Razorpay",
-        paymentResult: {
-          razorpayOrderId: razorpay_order_id,
-          razorpayPaymentId: razorpay_payment_id,
-          razorpaySignature: razorpay_signature,
-        },
-        totalPrice,
-        user: req.user._id,
-      });
-
-      console.log("✅ Order created with Razorpay payment:", order._id);
-
-      // Shiprocket integration
-      try {
-        const shiprocketRes = await shipRocketService.createOrder(order);
-        order.shipmentId = shiprocketRes.shipment_id;
-        order.shiprocketOrderId = shiprocketRes.order_id;
-        order.awbCode = shiprocketRes.awb_code;
-        await order.save();
-      } catch (err) {
-        console.error("⚠️ Shiprocket creation failed:", err.message);
-      }
-
-      res.json({ success: true, order });
-    } catch (err) {
-      console.error("❌ Razorpay verify error:", err);
-      res.status(500).json({ success: false, message: err.message });
-    }
-  },
-
-  // ------------------------------
-  // 🔹 COD OTP Request
-  // ------------------------------
-  codRequestOtp: async (req, res) => {
-    try {
-      const { mobile } = req.body;
-      if (!mobile) return res.status(400).json({ success: false, message: "Mobile number required" });
-
-      const result = await sendOTP(mobile);
-      res.status(200).json(result);
-    } catch (err) {
-      console.error("❌ COD OTP send error:", err.message);
-      res.status(500).json({ success: false, message: err.message });
-    }
-  },
-
-  // ------------------------------
-  // 🔹 COD OTP Verification + Place Order
-  // ------------------------------
-  codVerifyOtp: async (req, res) => {
-    try {
-      const { mobile, otp, orderItems, shippingAddress, totalPrice } = req.body;
-      if (!mobile || !otp) return res.status(400).json({ message: "Missing OTP or mobile" });
-
-      const verified = await verifyOTP(mobile, otp);
-      if (!verified.success)
-        return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
-
-      // ✅ OTP verified — create order
-      const order = await orderService.createOrder({
-        orderItems,
-        shippingAddress,
-        paymentMethod: "COD",
-        totalPrice,
-        user: req.user._id,
-      });
-
-      // ✅ Create Shiprocket order
-      try {
-        const shipment = await shipRocketService.createOrder(order);
-        order.shipmentId = shipment.shipment_id;
-        order.shiprocketOrderId = shipment.order_id;
-        order.awbCode = shipment.awb_code;
-        await order.save();
-      } catch (err) {
-        console.error("⚠️ Shiprocket COD creation failed:", err.message);
-      }
-
-      res.status(201).json({ success: true, message: "COD order placed", order });
-    } catch (err) {
-      console.error("❌ COD Verify error:", err.message);
-      res.status(500).json({ success: false, message: err.message });
-    }
-  },
-
-  // ------------------------------
-  // Track Shipment
-  // ------------------------------
   trackShipment: async (req, res) => {
     try {
       const order = await Order.findById(req.params.id);
