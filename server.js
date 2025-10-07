@@ -5,7 +5,7 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import express from "express";
-import { connectDb } from "./config/db.js";
+import { connectDb } from "./Config/db.js";
 import { initializeAdminUser } from "./Services/Admin.service.js";
 import { app } from "./index.js";
 
