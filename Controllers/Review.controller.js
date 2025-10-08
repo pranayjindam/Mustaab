@@ -44,3 +44,13 @@ export const hideReview = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+export const getAllReviewsAdmin = async (req, res) => {
+  try {
+    const reviews = await ReviewService.getAllReviewsAdmin();
+    res.status(200).json(reviews);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+

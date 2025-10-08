@@ -80,6 +80,14 @@ reviewRouter.post("/create", AuthenticateUser, reviewController.createReview);
  *       200:
  *         description: List of reviews for the product
  */
+
+reviewRouter.get(
+  "/admin",
+  AuthenticateAdmin,
+  reviewController.getAllReviewsAdmin
+);
+
+
 reviewRouter.get("/:productId", reviewController.getAllReview);
 
 /**
@@ -160,5 +168,7 @@ reviewRouter.delete("/:reviewId", AuthenticateUser, reviewController.deleteRevie
  *         description: Review not found
  */
 reviewRouter.patch("/:reviewId/hide", AuthenticateAdmin, reviewController.hideReview);
+
+
 
 export default reviewRouter;

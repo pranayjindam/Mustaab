@@ -69,3 +69,18 @@ export const hideReview = async (reviewId, admin = false) => {
   review.isHidden = true;
   return await review.save();
 };
+
+
+// ✅ Admin: Get all reviews for all products
+export const getAllReviewsAdmin = async () => {
+  const reviews = await Review.find()
+    .populate({ path: "user", select: "firstName lastName email" })
+    .populate({ path: "product", select: "name" })
+    .sort({ createdAt: -1 });
+
+  return {
+    success: true,
+    count: reviews.length,
+    reviews,
+  };
+};
