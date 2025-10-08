@@ -46,8 +46,8 @@ const createOrder = async (order) => {
     order_date: new Date().toISOString().split("T")[0],
     pickup_location: "home",
     billing_customer_name: order.shippingAddress.fullName,
-    billing_first_name: firstName,      // ✅ new
-    billing_last_name: lastName,        // ✅ new
+    billing_first_name: firstName,      
+    billing_last_name: lastName,        
     billing_address: order.shippingAddress.address,
     billing_city: order.shippingAddress.city,
     billing_pincode: order.shippingAddress.pincode,

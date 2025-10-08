@@ -1,7 +1,7 @@
 import Review from "../Models/Review.model.js";
 import {Product} from "../Models/Product.model.js";
 import mongoose from "mongoose";
-
+import UserModel from "../Models/User.model.js";
 export const createReview = async ({ productId, rating, review }, user) => {
   const newReview = await Review.create({
     product: productId,
@@ -12,6 +12,8 @@ export const createReview = async ({ productId, rating, review }, user) => {
   return newReview;
 };
 
+
+
 export const getAllReview = async (productId, { sort = "date", page = 1, limit = 10 }) => {
   const query = { product: productId, isHidden: false };
 
@@ -20,12 +22,30 @@ export const getAllReview = async (productId, { sort = "date", page = 1, limit =
     rating: { rating: -1 },
   };
 
-  return await Review.find(query)
-    .populate("user", "firstName lastName")
-    .sort(sortObj[sort] || sortObj.date)
+  let reviews = await Review.find(query)
+    .populate({ path: "user", select: "name email" })
+    .sort(sortObj[sort])
     .skip((page - 1) * limit)
-    .limit(limit);
+    .limit(limit)
+    .lean();
+
+  // Replace null users with placeholder
+  reviews = reviews.map(r => {
+    if (!r.user) r.user = { name: "Deleted User", email: "" };
+    return r;
+  });
+
+  const total = await Review.countDocuments(query);
+
+  return {
+    success: true,
+    count: reviews.length,
+    total,
+    reviews,
+  };
 };
+
+
 
 export const updateReview = async (reviewId, userId, updateData) => {
   const review = await Review.findOne({ _id: reviewId, user: userId });

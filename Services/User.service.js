@@ -4,10 +4,10 @@ import jwt from "jsonwebtoken";
 import { verifyOTP } from "./Otp.service.js";
 
 // 🔹 Create or get user (used in registration after OTP verified)
-export const createOrGetUser = async ({ name, email, mobile }) => {
+export const createOrGetUser = async ({ name, mobile, email }) => {
   let user = await User.findOne({ mobile });
   if (!user) {
-    user = await User.create({ name, email, mobile });
+    user = await User.create({ name, mobile, email });
     // Create empty cart for new user
     await Cart.create({ userId: user._id, items: [] });
   }
@@ -16,6 +16,7 @@ export const createOrGetUser = async ({ name, email, mobile }) => {
 
 // 🔹 Get user by identifier (mobile or email)
 export const getUserByIdentifier = async (identifier) => {
+  
   return await User.findOne({
     $or: [{ mobile: identifier }, { email: identifier }],
   });

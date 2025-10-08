@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config(); // Make sure JWT_SECRET is available
 
 const DEFAULT_ADMIN = {
-  name: "Super Admin",
+  name: "Pranay",
   email: "pranayjindam0708@gmail.com",
   password: "I4gotpassword.", // Plain password; will be hashed
   role: "ADMIN",

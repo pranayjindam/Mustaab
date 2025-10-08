@@ -80,7 +80,7 @@ reviewRouter.post("/create", AuthenticateUser, reviewController.createReview);
  *       200:
  *         description: List of reviews for the product
  */
-reviewRouter.get("/product/:productId", reviewController.getAllReview);
+reviewRouter.get("/:productId", reviewController.getAllReview);
 
 /**
  * @swagger
