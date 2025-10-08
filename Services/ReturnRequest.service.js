@@ -5,24 +5,39 @@ export const createReturnRequest = async (data) => {
   return await request.save();
 };
 
-// ✅ User: Get their own requests (with populated product + order)
+// ✅ User: Get their own requests (fully populated)
 export const getUserRequests = async (userId) => {
   return await ReturnRequest.find({ userId })
-    .populate("productId", "name price images") // fetch product details
-    .populate("orderId", "_id totalPrice orderItems") // fetch order details
+    .populate("userId", "email name") // 👈 include user info too
+    .populate({
+      path: "orderId",
+      select: "_id orderItems totalPrice",
+      populate: {
+        path: "orderItems.product",
+        select: "name images price",
+      },
+    })
+    .populate("productId", "name price images")
     .sort({ createdAt: -1 });
 };
 
-// ✅ Admin: Get all return/exchange requests (with full populated data)
+// ✅ Admin: Get all return/exchange requests (fully populated)
 export const getAllRequests = async () => {
   return await ReturnRequest.find()
-    .populate("userId", "email name") // get user info
-    .populate("productId", "name price images") // get product info
-    .populate("orderId", "_id totalPrice orderItems") // get order info
+    .populate("userId", "email name")
+    .populate({
+      path: "orderId",
+      select: "_id orderItems totalPrice",
+      populate: {
+        path: "orderItems.product",
+        select: "name images price",
+      },
+    })
+    .populate("productId", "name price images")
     .sort({ createdAt: -1 });
 };
 
-// ✅ Update request status
+// ✅ Admin: Update request status
 export const updateRequestStatus = async (id, status, adminNote) => {
   return await ReturnRequest.findByIdAndUpdate(
     id,
@@ -30,6 +45,6 @@ export const updateRequestStatus = async (id, status, adminNote) => {
     { new: true }
   )
     .populate("userId", "email name")
-    .populate("productId", "name")
-    .populate("orderId", "_id");
+    .populate("productId", "name price images")
+    .populate("orderId", "_id totalPrice");
 };
