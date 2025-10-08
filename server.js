@@ -29,11 +29,7 @@ const startServer = async () => {
 
     // Enable CORS for frontend (replace with your frontend URL in production)
     app.use(
-      cors({
-        origin: "http://localhost:1000", // frontend origin
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      },
+      cors(
      {
         origin: "https://mustaab-frontend.vercel.app", // frontend origin
         credentials: true,
