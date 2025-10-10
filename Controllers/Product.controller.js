@@ -83,3 +83,24 @@ export const getFeaturedProducts = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+export const getBarCode=async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).send("Product not found");
+
+    bwipjs.toBuffer({
+      bcid: "code128",       // Barcode type
+      text: product._id.toString(), // Use product ID
+      scale: 3,
+      height: 10,
+      includetext: true,
+      textxalign: "center",
+    }, (err, png) => {
+      if (err) return res.status(500).send("Error generating barcode");
+      res.type("image/png");
+      res.send(png);
+    });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+}

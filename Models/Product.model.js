@@ -26,6 +26,7 @@ const productSchema = new mongoose.Schema(
     isReturnable: { type: Boolean, default: false },
     isExchangeable: { type: Boolean, default: false },
     isCancelable: { type: Boolean, default: true },
+   
   },
   { timestamps: true }
 );
