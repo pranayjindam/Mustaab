@@ -9,7 +9,8 @@ import {
   searchProducts,
   getFeaturedProducts,
   addmultipleProducts,
-  getBarCode
+  getBarCode,
+  getSearchSuggestions
 } from "../Controllers/Product.controller.js";
 import { AuthenticateAdmin } from "../Middlewares/auth.js";
 
@@ -18,6 +19,7 @@ const productRouter = express.Router();
 productRouter.post("/add", AuthenticateAdmin, createProduct);
 productRouter.get("/", getAllProducts);
 productRouter.get("/featured", getFeaturedProducts);
+productRouter.get('/search/suggestions', getSearchSuggestions);
 productRouter.get("/search/:keyword", searchProducts);
 productRouter.get("/category/:category", getProductsByCategory);
 productRouter.get("/:id", getProductById);
