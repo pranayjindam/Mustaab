@@ -109,9 +109,10 @@ export const updateProduct = async (id, data) => {
   // Handle category separately
   if (data.category) {
     productData.category = {};
-    if (data.category.main) productData.category.main = mongoose.Types.ObjectId(data.category.main);
-    if (data.category.sub) productData.category.sub = mongoose.Types.ObjectId(data.category.sub);
-    if (data.category.type) productData.category.type = mongoose.Types.ObjectId(data.category.type);
+   if (data.category.main) productData.category.main = data.category.main;
+if (data.category.sub)  productData.category.sub  = data.category.sub;
+if (data.category.type) productData.category.type = data.category.type;
+
   }
 
   return Product.findByIdAndUpdate(id, productData, { new: true });
