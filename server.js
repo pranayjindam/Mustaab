@@ -10,7 +10,7 @@ import { initializeAdminUser } from "./Services/Admin.service.js";
 import { app } from "./index.js";
 
 // Import chatbot options
-import { chatbotOptions } from "./ChatbotOptions.js";
+import { chatbotOptions } from "./chatbotOptions.js";
 
 const PORT = process.env.PORT || 2000;
 
