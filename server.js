@@ -24,14 +24,18 @@ const startServer = async () => {
 
     // Middleware
     app.use(express.json());
-    app.use(cors({
-      origin: [
-        "http://localhost:1000",
-        "https://mustaab-frontend.vercel.app"
-      ],
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    }));
+ app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests from anywhere (including local devices, phones, etc.)
+    if (!origin) return callback(null, true);
+
+    // You can restrict later if needed
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
     const server = http.createServer(app);
 
