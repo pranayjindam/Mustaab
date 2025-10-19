@@ -12,14 +12,14 @@ export const createProduct = async (data) => {
   const productData = {
     ...data,
     category: {
-      main: new mongoose.Types.ObjectId(data.category.main), // ✅ use 'new'
-      sub: data.category.sub ? new mongoose.Types.ObjectId(data.category.sub) : null,
-      type: data.category.type ? new mongoose.Types.ObjectId(data.category.type) : null,
+      main: new mongoose.Types.ObjectId(data.category.main),
+      sub: data.category?.sub ? new mongoose.Types.ObjectId(data.category.sub) : null,
+      type: data.category?.type ? new mongoose.Types.ObjectId(data.category.type) : null,
     },
     price: Number(data.price),
     stock: Number(data.stock),
     discount: Number(data.discount || 0),
-    
+    images: data.images || [] // ✅ store uploaded base64 images
   };
 
   console.log("Converted product data for DB:", productData);
@@ -30,6 +30,7 @@ export const createProduct = async (data) => {
   console.log("Saved product:", saved);
   return saved;
 };
+
 export const addMultipleProducts = async (productsArray) => {
   if (!Array.isArray(productsArray) || productsArray.length === 0) {
     throw new Error("Products array is required and cannot be empty");

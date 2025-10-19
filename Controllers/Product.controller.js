@@ -2,16 +2,40 @@
 import * as productService from "../Services/Product.service.js";
 import { Product } from "../Models/Product.model.js";
 
-export const createProduct = async (req, res) => {
-  try {
-    console.log("Request body:", req.body);
-    const product = await productService.createProduct(req.body);
-    res.status(201).json({ success: true, product });
-  } catch (err) {
-    console.error("Error creating product:", err);
-    res.status(500).json({ success: false, message: err.message });
+import multer from "multer";
+import { createProduct as productServiceCreate } from "../Services/Product.service.js";
+
+// Memory storage
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// Updated Express handler
+export const createProduct = [
+  upload.array("images", 5), // accept up to 5 images
+  async (req, res) => {
+    try {
+      console.log("Request body:", req.body);
+      console.log("Uploaded files:", req.files);
+
+      // Convert uploaded files to base64
+      const images = req.files.map(file => 
+        `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+      );
+
+      // Merge images into req.body
+      const data = {
+        ...req.body,
+        images
+      };
+
+      const product = await productServiceCreate(data);
+      res.status(201).json({ success: true, product });
+    } catch (err) {
+      console.error("Error creating product:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
   }
-};
+];
 export const addmultipleProducts=async(req,res)=>{
   try{
     const products=await productService.addMultipleProducts(req.body);
