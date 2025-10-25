@@ -1,6 +1,6 @@
 
 import * as productService from "../Services/Product.service.js";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary from "../Config/cloudinary.js";
 import { Product } from "../Models/Product.model.js";
 import mongoose from "mongoose";
 
