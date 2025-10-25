@@ -3,7 +3,7 @@ import * as productService from "../Services/Product.service.js";
 import cloudinary from "../Config/cloudinary.js";
 import { Product } from "../Models/Product.model.js";
 import mongoose from "mongoose";
-
+import bwipjs from "bwip-js"; // make sure this import exists at the top
 // Helper to upload a file buffer to Cloudinary
 const uploadToCloudinary = async (fileBuffer, folder, filename) => {
   return new Promise((resolve, reject) => {
@@ -68,24 +68,28 @@ export const createProduct = async (req, res) => {
     }
 
     // Convert numeric and boolean fields
-    const productData = {
-      ...parsedData,
-      price: Number(parsedData.price),
-      stock: Number(parsedData.stock),
-      discount: Number(parsedData.discount || 0),
-      isFeatured: parsedData.isFeatured === "true",
-      isReturnable: parsedData.isReturnable === "true",
-      isExchangeable: parsedData.isExchangeable === "true",
-      category: {
-        main: new mongoose.Types.ObjectId(parsedData.category.main),
-        sub: parsedData.category.sub
-          ? new mongoose.Types.ObjectId(parsedData.category.sub)
-          : null,
-        type: parsedData.category.type
-          ? new mongoose.Types.ObjectId(parsedData.category.type)
-          : null,
-      },
-    };
+  const productData = {
+  ...parsedData,
+  price: Number(parsedData.price),
+  stock: Number(parsedData.stock),
+  discount: Number(parsedData.discount || 0),
+  isFeatured: parsedData.isFeatured === "true",
+  isReturnable: parsedData.isReturnable === "true",
+  isExchangeable: parsedData.isExchangeable === "true",
+  category: {
+    main: new mongoose.Types.ObjectId(parsedData.category.main),
+    sub: parsedData.category.sub
+      ? new mongoose.Types.ObjectId(parsedData.category.sub)
+      : null,
+    type: parsedData.category.type
+      ? new mongoose.Types.ObjectId(parsedData.category.type)
+      : null,
+  },
+  // ✅ Barcode handling
+  barcode: parsedData.barcode
+    ? Number(parsedData.barcode)
+    : Date.now(), // auto-generate only if not given
+};
 
     const product = new Product(productData);
     const saved = await product.save();
@@ -258,24 +262,55 @@ export const getFeaturedProducts = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-export const getBarCode=async (req, res) => {
+
+
+export const getBarCode = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).send("Product not found");
 
-    bwipjs.toBuffer({
-      bcid: "code128",       // Barcode type
-      text: product._id.toString(), // Use product ID
-      scale: 3,
-      height: 10,
-      includetext: true,
-      textxalign: "center",
-    }, (err, png) => {
-      if (err) return res.status(500).send("Error generating barcode");
-      res.type("image/png");
-      res.send(png);
-    });
+    // ✅ Validate numeric barcode
+    if (!product.barcode || isNaN(product.barcode)) {
+      return res.status(400).send("Product barcode is invalid or missing");
+    }
+
+    // ✅ Generate a numeric-only barcode (EAN13 works best for 12–13 digits)
+    bwipjs.toBuffer(
+      {
+        bcid: "ean13", // numeric-only barcode standard
+        text: product.barcode.toString().padStart(12, "0"), // must be 12–13 digits
+        scale: 3,
+        height: 10,
+        includetext: true,
+        textxalign: "center",
+      },
+      (err, png) => {
+        if (err) {
+          console.error("Barcode generation error:", err);
+          return res.status(500).send("Error generating barcode");
+        }
+        res.type("image/png");
+        res.send(png);
+      }
+    );
   } catch (err) {
+    console.error("Error fetching product barcode:", err);
     res.status(500).send(err.message);
   }
-}
+};
+
+// Product.controller.js
+export const getProductByBarcode = async (req, res) => {
+  try {
+    const { barcode } = req.params;
+    if (!barcode) return res.status(400).json({ success: false, message: "Barcode required" });
+
+    const product = await Product.findOne({ barcode: barcode });
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    res.json({ success: true, product });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+

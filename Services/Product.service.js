@@ -9,18 +9,18 @@ export const createProduct = async (data) => {
     throw new Error("Category main ID is required");
   }
 
-  const productData = {
-    ...data,
-    category: {
-      main: new mongoose.Types.ObjectId(data.category.main),
-      sub: data.category.sub ? new mongoose.Types.ObjectId(data.category.sub) : null,
-      type: data.category.type ? new mongoose.Types.ObjectId(data.category.type) : null,
-    },
-    price: Number(data.price),
-    stock: Number(data.stock),
-    discount: Number(data.discount || 0),
-  };
-
+const productData = {
+  ...data,
+  category: {
+    main: new mongoose.Types.ObjectId(data.category.main),
+    sub: data.category.sub ? new mongoose.Types.ObjectId(data.category.sub) : null,
+    type: data.category.type ? new mongoose.Types.ObjectId(data.category.type) : null,
+  },
+  price: Number(data.price),
+  stock: Number(data.stock),
+  discount: Number(data.discount || 0),
+  barcode: data.barcode ? Number(data.barcode) : Date.now(), // ✅ same logic
+};
   console.log("Converted product data for DB:", productData);
 
   const product = new Product(productData);

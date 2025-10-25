@@ -10,7 +10,8 @@ import {
   getFeaturedProducts,
   addmultipleProducts,
   getBarCode,
-  getSearchSuggestions
+  getSearchSuggestions,
+  getProductByBarcode
 } from "../Controllers/Product.controller.js";
 import { AuthenticateAdmin } from "../Middlewares/auth.js";
 import multer from "multer";
@@ -37,4 +38,7 @@ productRouter.put("/:id", AuthenticateAdmin, updateProduct);
 productRouter.delete("/:id", AuthenticateAdmin, deleteProduct);
 productRouter.post("/addmultipleproducts",AuthenticateAdmin,addmultipleProducts);
 productRouter.get("/barcode/:id", AuthenticateAdmin,getBarCode);
+// Product.routes.js
+productRouter.get("/lookup/:barcode", getProductByBarcode);
+
 export default productRouter;

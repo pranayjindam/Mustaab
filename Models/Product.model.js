@@ -20,6 +20,7 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     stock: { type: Number, required: true },
+    barcode:{type:Number,required:true},
     images: [String],
     thumbnail: String,
     isFeatured: { type: Boolean, default: false },
