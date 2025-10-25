@@ -1,41 +1,104 @@
 
 import * as productService from "../Services/Product.service.js";
+import cloudinary from "../config/cloudinary.js";
 import { Product } from "../Models/Product.model.js";
+import mongoose from "mongoose";
 
-import multer from "multer";
-import { createProduct as productServiceCreate } from "../Services/Product.service.js";
+// Helper to upload a file buffer to Cloudinary
+const uploadToCloudinary = async (fileBuffer, folder, filename) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, public_id: filename, resource_type: "image" },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
 
-// Memory storage
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+export const createProduct = async (req, res) => {
+  try {
+    console.log("🧾 Received FormData fields:", req.body);
+    console.log("📸 Received files:", req.files);
 
-// Updated Express handler
-export const createProduct = [
-  upload.array("images", 5), // accept up to 5 images
-  async (req, res) => {
-    try {
-      console.log("Request body:", req.body);
-      console.log("Uploaded files:", req.files);
+    // Parse JSON fields
+    const parsedData = {
+      ...req.body,
+      category: JSON.parse(req.body.category || "{}"),
+      tags: JSON.parse(req.body.tags || "[]"),
+      sizes: JSON.parse(req.body.sizes || "[]"),
+      colors: JSON.parse(req.body.colors || "[]"),
+    };
 
-      // Convert uploaded files to base64
-      const images = req.files.map(file => 
-        `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+    // Upload thumbnail
+    if (req.files?.thumbnail?.[0]) {
+      parsedData.thumbnail = await uploadToCloudinary(
+        req.files.thumbnail[0].buffer,
+        "products/thumbnails",
+        req.files.thumbnail[0].originalname
       );
-
-      // Merge images into req.body
-      const data = {
-        ...req.body,
-        images
-      };
-
-      const product = await productServiceCreate(data);
-      res.status(201).json({ success: true, product });
-    } catch (err) {
-      console.error("Error creating product:", err);
-      res.status(500).json({ success: false, message: err.message });
     }
+
+    // Upload product images
+    if (req.files?.images?.length) {
+      parsedData.images = [];
+      for (const file of req.files.images) {
+        const url = await uploadToCloudinary(
+          file.buffer,
+          "products/images",
+          file.originalname
+        );
+        parsedData.images.push(url);
+      }
+    }
+
+    // Upload color variant images
+    if (req.files?.colorImages?.length) {
+      for (let i = 0; i < parsedData.colors.length; i++) {
+        if (req.files.colorImages[i]) {
+          parsedData.colors[i].image = await uploadToCloudinary(
+            req.files.colorImages[i].buffer,
+            "products/colors",
+            req.files.colorImages[i].originalname
+          );
+        }
+      }
+    }
+
+    // Convert numeric and boolean fields
+    const productData = {
+      ...parsedData,
+      price: Number(parsedData.price),
+      stock: Number(parsedData.stock),
+      discount: Number(parsedData.discount || 0),
+      isFeatured: parsedData.isFeatured === "true",
+      isReturnable: parsedData.isReturnable === "true",
+      isExchangeable: parsedData.isExchangeable === "true",
+      category: {
+        main: new mongoose.Types.ObjectId(parsedData.category.main),
+        sub: parsedData.category.sub
+          ? new mongoose.Types.ObjectId(parsedData.category.sub)
+          : null,
+        type: parsedData.category.type
+          ? new mongoose.Types.ObjectId(parsedData.category.type)
+          : null,
+      },
+    };
+
+    const product = new Product(productData);
+    const saved = await product.save();
+    console.log("✅ Saved product:", saved);
+
+    res.status(201).json({ success: true, product: saved });
+  } catch (err) {
+    console.error("❌ Error creating product:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
-];
+};
+
+
 export const addmultipleProducts=async(req,res)=>{
   try{
     const products=await productService.addMultipleProducts(req.body);
