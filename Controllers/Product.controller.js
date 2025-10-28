@@ -70,9 +70,10 @@ export const createProduct = async (req, res) => {
     // Convert numeric and boolean fields
   const productData = {
   ...parsedData,
-  price: Number(parsedData.price),
-  stock: Number(parsedData.stock),
-  discount: Number(parsedData.discount || 0),
+price: parsedData.price ? Number(parsedData.price) : 0,
+stock: parsedData.stock ? Number(parsedData.stock) : 0,
+discount: parsedData.discount ? Number(parsedData.discount) : 0,
+
   isFeatured: parsedData.isFeatured === "true",
   isReturnable: parsedData.isReturnable === "true",
   isExchangeable: parsedData.isExchangeable === "true",
@@ -140,14 +141,76 @@ export const getProductsByCategory = async (req, res) => {
   }
 };
 
+
+
 export const updateProduct = async (req, res) => {
   try {
-    const product = await productService.updateProduct(req.params.id, req.body);
-    res.json({ success: true, product });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    // ✅ Step 1: Parse JSON fields safely
+    const parseIfString = (field) => {
+      if (typeof req.body[field] === "string") {
+        try {
+          req.body[field] = JSON.parse(req.body[field]);
+        } catch {
+          // keep it as is if parsing fails
+        }
+      }
+    };
+
+    ["category", "tags", "sizes", "colors"].forEach(parseIfString);
+
+    // ✅ Step 2: Handle file uploads if any
+    if (req.files?.thumbnail && req.files.thumbnail.length > 0) {
+      req.body.thumbnail = req.files.thumbnail[0].path;
+    }
+
+    if (req.files?.images && req.files.images.length > 0) {
+      req.body.images = req.files.images.map((file) => file.path);
+    }
+
+    if (req.files?.colorImages && req.files.colorImages.length > 0) {
+      // merge color image paths with color names
+      req.body.colors = req.body.colors.map((color, i) => ({
+        ...color,
+        image: req.files.colorImages[i]?.path || color.image || "",
+      }));
+    }
+// 🧩 Clean up empty category fields
+if (req.body.category && typeof req.body.category === "object") {
+  const cleanedCategory = {};
+  ["main", "sub", "type"].forEach((key) => {
+    if (req.body.category[key]) {
+      cleanedCategory[key] = req.body.category[key];
+    }
+  });
+  req.body.category = cleanedCategory;
+}
+
+    // ✅ Step 3: Update the product
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      product: updatedProduct,
+    });
+  } catch (error) {
+    console.error("Update product error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update product",
+    });
   }
 };
+
+
 
 export const deleteProduct = async (req, res) => {
   try {

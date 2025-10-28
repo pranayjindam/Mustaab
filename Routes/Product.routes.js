@@ -34,7 +34,11 @@ productRouter.get('/search/suggestions', getSearchSuggestions);
 productRouter.get("/search/:keyword", searchProducts);
 productRouter.get("/category/:category", getProductsByCategory);
 productRouter.get("/:id", getProductById);
-productRouter.put("/:id", AuthenticateAdmin, updateProduct);
+productRouter.put("/:id", AuthenticateAdmin, upload.fields([
+  { name: "thumbnail", maxCount: 1 },
+  { name: "images", maxCount: 10 },
+  { name: "colorImages", maxCount: 10 },
+]), updateProduct);
 productRouter.delete("/:id", AuthenticateAdmin, deleteProduct);
 productRouter.post("/addmultipleproducts",AuthenticateAdmin,addmultipleProducts);
 productRouter.get("/barcode/:id", AuthenticateAdmin,getBarCode);
