@@ -36,6 +36,7 @@ const msg = {
     try {
       console.log("FROM EMAIL:", process.env.SENDGRID_SENDER_EMAIL);
 
+
       await sgMail.send(msg);
       console.log("✅ SendGrid OTP sent to", identifier);
       return { success: true, message: "OTP sent to email via SendGrid" };
@@ -52,6 +53,7 @@ const msg = {
   const toNumber = `+91${cleanMobile}`;
 
   try {
+    console.log("Verify SID:", process.env.TWILIO_VERIFY_SID);
     await client.verify.v2.services(verifySid).verifications.create({
       to: toNumber,
       channel: "sms",

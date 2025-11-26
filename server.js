@@ -37,18 +37,30 @@ const startServer = async () => {
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-    const server = http.createServer(app);
+   const server = http.createServer(app);
 
-    const io = new Server(server, {
-      cors: {
-        origin: [
-          "http://localhost:1000",
-          "https://mustaab-frontend.vercel.app"
-        ],
-        methods: ["GET", "POST"],
-        credentials: true
-      }
-    });
+const allowed = [
+  "http://localhost:1000",
+  "https://mustaab-frontend.vercel.app",
+  "https://laxmisareehouse.com",
+  "https://www.laxmisareehouse.com"
+];
+
+const io = new Server(server, {
+  cors: {
+    origin: function(origin, callback){
+      // allow non-browser requests (curl, mobile apps) that have no origin
+      if (!origin) return callback(null, true);
+      if (allowed.indexOf(origin) !== -1) return callback(null, true);
+      return callback(new Error('CORS blocked by server'), false);
+    },
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  // optional: prefer websocket transport if your hosting/proxy supports it
+  // transports: ['websocket']
+});
+
 
     // General realtime connections (for orders, etc.)
     io.on("connection", (socket) => {
