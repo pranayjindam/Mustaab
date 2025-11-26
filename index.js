@@ -26,7 +26,9 @@ app.use('/api-docs', swaggerUiExpress.serve, swaggerUiExpress.setup(swaggerSpec)
 
 const allowedOrigins = [
   "http://localhost:1000",
-  "https://mustaab-frontend.vercel.app"
+  "https://mustaab-frontend.vercel.app",
+  "https://laxmisareehouse.com",
+  "https://www.laxmisareehouse.com"
 ];
 
 app.use(cors({
