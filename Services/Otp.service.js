@@ -66,6 +66,53 @@ const msg = {
   }
 };
 
+
+export const sendNotification = async ({ email, mobile, subject, message }) => {
+  try {
+    // ============================
+    // 1️⃣ SEND EMAIL (if email exists)
+    // ============================
+    if (email && /\S+@\S+\.\S+/.test(email)) {
+      const emailMsg = {
+        to: email,
+        from: {
+          email: process.env.SENDGRID_SENDER_EMAIL,
+          name: "Laxmi Saree House",
+        },
+        subject: subject,
+        text: message,
+        html: `<p>${message}</p>`,
+      };
+
+      await sgMail.send(emailMsg);
+      console.log("📩 Email sent to", email);
+    }
+
+    // ============================
+    // 2️⃣ SEND SMS (if mobile exists)
+    // ============================
+    if (mobile) {
+      const cleanMobile = mobile.replace(/\D/g, "");
+      const toNumber = `+91${cleanMobile}`;
+
+      await client.messages.create({
+        body: message,
+        from: process.env.TWILIO_PHONE_NUMBER, // NOT VERIFY SID
+        to: toNumber,
+      });
+
+      console.log("📱 SMS sent to", toNumber);
+    }
+
+    return { success: true, message: "Notification sent" };
+
+  } catch (error) {
+    console.error("❌ Notification Error:", error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+
 // ----------------------------
 // Verify OTP (Email or Mobile)
 // ----------------------------
