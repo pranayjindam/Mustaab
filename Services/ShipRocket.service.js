@@ -1,4 +1,4 @@
-// Services/ShipRocket.service.js
+// Services/shiprocket.service.js
 import axios from "axios";
 
 const SHIPROCKET_EMAIL = process.env.SHIPROCKET_EMAIL;
@@ -6,23 +6,22 @@ const SHIPROCKET_PASSWORD = process.env.SHIPROCKET_PASSWORD;
 
 let token = null;
 
-// ------------------------------
-// Login to Shiprocket
-// ------------------------------
+/* ------------------------------
+   LOGIN
+------------------------------ */
 const login = async () => {
-  if (token) return token;
-
   try {
-    console.log("Creating Shiprocket token...");
-    const response = await axios.post(
+    console.log("🔐 Shiprocket login...");
+    const res = await axios.post(
       "https://apiv2.shiprocket.in/v1/external/auth/login",
       {
         email: SHIPROCKET_EMAIL,
         password: SHIPROCKET_PASSWORD,
       }
     );
-    console.log("✅ Shiprocket token created");
-    token = response.data.token;
+
+    token = res.data.token;
+    console.log("✅ Shiprocket token received");
     return token;
   } catch (err) {
     console.error("❌ Shiprocket login failed:", err.response?.data || err.message);
@@ -30,82 +29,102 @@ const login = async () => {
   }
 };
 
-// ------------------------------
-// Create Shiprocket Order
-// ------------------------------
-// Services/shiprocketService.js
-const createOrder = async (order) => {
-  if (!token) await login();
+/* ------------------------------
+   AXIOS INSTANCE
+------------------------------ */
+const shiprocketAxios = axios.create();
 
-  // 🔹 Update payload here
-  const [firstName, ...lastNameParts] = order.shippingAddress.fullName.split(" ");
+shiprocketAxios.interceptors.request.use(async (config) => {
+  if (!token) await login();
+  config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+shiprocketAxios.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    if (error.response?.status === 401) {
+      console.warn("⚠️ Shiprocket token expired. Re-login...");
+      token = null;
+      await login();
+      error.config.headers.Authorization = `Bearer ${token}`;
+      return shiprocketAxios(error.config);
+    }
+    return Promise.reject(error);
+  }
+);
+
+/* ------------------------------
+   CREATE ORDER
+------------------------------ */
+const createOrder = async (order) => {
+  const [firstName, ...lastNameParts] =
+    order.shippingAddress.fullName.split(" ");
   const lastName = lastNameParts.join(" ") || "-";
 
   const payload = {
     order_id: order._id.toString(),
     order_date: new Date().toISOString().split("T")[0],
     pickup_location: "home",
+
     billing_customer_name: order.shippingAddress.fullName,
-    billing_first_name: firstName,      
-    billing_last_name: lastName,        
+    billing_first_name: firstName,
+    billing_last_name: lastName,
     billing_address: order.shippingAddress.address,
     billing_city: order.shippingAddress.city,
     billing_pincode: order.shippingAddress.pincode,
     billing_state: order.shippingAddress.state,
     billing_country: "India",
     billing_phone: order.shippingAddress.phoneNumber,
-    shipping_is_billing: true,          // ✅ new
+
+    shipping_is_billing: true,
+
     order_items: order.orderItems.map((item) => ({
       name: item.name,
       sku: item.product.toString(),
       units: item.quantity,
       selling_price: item.price,
     })),
+
     payment_method: order.paymentMethod === "COD" ? "COD" : "Prepaid",
     sub_total: order.totalPrice,
+
     length: 10,
     breadth: 10,
     height: 10,
     weight: 1,
   };
-console.log(payload);
-  const response = await axios.post(
+
+  console.log("📦 Shiprocket Payload:", payload);
+
+  const res = await shiprocketAxios.post(
     "https://apiv2.shiprocket.in/v1/external/orders/create/adhoc",
-    payload,
-    { headers: { Authorization: `Bearer ${token}` } }
+    payload
   );
-console.log(response);
-  return response.data;
+
+  console.log("🚀 Shiprocket Response:", res.data);
+  return res.data;
 };
 
-
-// ------------------------------
-// Track Shipment by AWB
-// ------------------------------
+/* ------------------------------
+   TRACK ORDER
+------------------------------ */
 const trackOrder = async (awbCode) => {
-  if (!token) await login();
-
-  const response = await axios.get(
-    `https://apiv2.shiprocket.in/v1/external/courier/track/awb/${awbCode}`,
-    { headers: { Authorization: `Bearer ${token}` } }
+  const res = await shiprocketAxios.get(
+    `https://apiv2.shiprocket.in/v1/external/courier/track/awb/${awbCode}`
   );
-
-  return response.data;
+  return res.data;
 };
 
-// ------------------------------
-// Cancel Shiprocket Order
-// ------------------------------
+/* ------------------------------
+   CANCEL ORDER
+------------------------------ */
 const cancelOrder = async (shiprocketOrderId) => {
-  if (!token) await login();
-
-  const response = await axios.post(
+  const res = await shiprocketAxios.post(
     "https://apiv2.shiprocket.in/v1/external/orders/cancel",
-    { ids: [shiprocketOrderId] },
-    { headers: { Authorization: `Bearer ${token}` } }
+    { ids: [shiprocketOrderId] }
   );
-
-  return response.data;
+  return res.data;
 };
 
 export const shipRocketService = {

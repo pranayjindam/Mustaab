@@ -1,6 +1,6 @@
 // server/Services/Order.service.js
 import Order from "../Models/Order.model.js";
-import { iThinkService } from "./iThink.service.js"; // <--- fixed import (server-side)
+import { shipRocketService } from "./ShipRocket.service.js";
 
 export const orderService = {
   createOrder: async (orderData) => {
@@ -16,54 +16,35 @@ export const orderService = {
     return await Order.findById(orderId);
   },
 
-  /**
-   * Cancel order (service-level)
-   * - Updates DB status to "Cancelled"
-   * - Attempts to cancel shipment on iThink (if present)
-   * - Clears iThink-related fields on success (best-effort)
-   */
+  /* ---------- CANCEL ORDER ---------- */
   cancelOrder: async (orderId, userId) => {
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) throw new Error("Order not found or unauthorized");
 
-    // Update status in MongoDB
     order.status = "Cancelled";
 
-    // Attempt to cancel shipment on iThink if we have iThink info
-    const ithinkOrderId = order.shipping?.ithinkOrderId || null;
-    const awb = order.shipping?.awb || order.awbCode || null;
+    const shiprocketOrderId = order.shipping?.shiprocketOrderId || null;
 
-    if (ithinkOrderId || awb) {
+    if (shiprocketOrderId) {
       try {
-        // iThink v3 expects { order_id, awb_no } in body
-        const resp = await iThinkService.cancelOrder({
-          order_id: ithinkOrderId || order._id.toString(),
-          awb_no: awb,
-        });
+        const resp = await shipRocketService.cancelOrder(shiprocketOrderId);
+        console.log("🚫 Shiprocket cancel response:", resp);
 
-        // Log response for debugging
-        console.log("iThink cancel response:", resp);
-
-        // If iThink responded ok (resp.success may be true or resp.status 200)
-        // clear shipment fields (best-effort)
-        order.shipmentId = undefined;
-        if (order.shipping) {
-          order.shipping.ithinkOrderId = undefined;
-          order.shipping.awb = undefined;
-          order.shipping.labelUrl = undefined;
-          order.shipping.provider = undefined;
-          order.shipping.courier = undefined;
-        }
+        // Clear shipping data
+        order.shipping = undefined;
         order.awbCode = undefined;
       } catch (err) {
-        console.error("⚠️ Failed to cancel iThink order:", err?.message || err);
-        // do not throw — keep cancellation local even if external cancel fails
+        console.error(
+          "⚠️ Failed to cancel Shiprocket order:",
+          err.response?.data || err.message
+        );
       }
     }
 
     return await order.save();
   },
 
+  /* ---------- RETURN ORDER ---------- */
   returnOrder: async (orderId, userId) => {
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) throw new Error("Order not found or unauthorized");
@@ -71,6 +52,7 @@ export const orderService = {
     return await order.save();
   },
 
+  /* ---------- EXCHANGE ORDER ---------- */
   exchangeOrder: async (orderId, userId) => {
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) throw new Error("Order not found or unauthorized");
@@ -78,6 +60,7 @@ export const orderService = {
     return await order.save();
   },
 
+  /* ---------- ADMIN STATUS UPDATE ---------- */
   updateOrderStatus: async (orderId, status) => {
     const order = await Order.findById(orderId);
     if (!order) throw new Error("Order not found");
