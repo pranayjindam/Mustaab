@@ -17,7 +17,13 @@ import { AuthenticateAdmin } from "../Middlewares/auth.js";
 import multer from "multer";
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    files: 30,              // ✅ allow up to 30 images
+    fileSize: 5 * 1024 * 1024, // ✅ 5MB per image
+  },
+});
 
 const productRouter = express.Router();
 
@@ -27,8 +33,8 @@ productRouter.post(
   AuthenticateAdmin,
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
-    { name: "images", maxCount: 10 },
-    { name: "colorImages", maxCount: 10 }
+    { name: "images", maxCount: 100 },
+    { name: "colorImages", maxCount: 100 }
   ]),
   createProduct
 );
@@ -48,11 +54,12 @@ productRouter.put(
   AuthenticateAdmin,
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
-    { name: "images", maxCount: 10 },
-    { name: "colorImages", maxCount: 10 }
+    { name: "images", maxCount: 100 },      // ✅ FIXED
+    { name: "colorImages", maxCount: 100 }  // ✅ FIXED
   ]),
   updateProduct
 );
+
 
 /* ---------- DELETE ---------- */
 productRouter.delete("/:id", AuthenticateAdmin, deleteProduct);
