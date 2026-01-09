@@ -1,25 +1,30 @@
 import { Category } from "../Models/Category.model.js";
 
 export const createCategory = async (data) => {
-  // Always store parent as array
-  const parentArray = data.level === "main" ? [] : Array.isArray(data.parent) ? data.parent : [data.parent];
-  data.parent = parentArray;
+  // normalize parent
+  if (data.level === "main") {
+    data.parent = [];
+  } else {
+    data.parent = Array.isArray(data.parent) ? data.parent : [data.parent];
+  }
 
-  // Allow same name under different parents
-  const existing = await Category.findOne({
-    name: data.name,
-    level: data.level,
-    parent: { $all: parentArray } // ensures exact parent(s) match
-  });
+  // 🔴 DO NOT check existing for main categories
+  if (data.level !== "main") {
+    const existing = await Category.findOne({
+      name: data.name,
+      level: data.level,
+      parent: { $size: data.parent.length, $all: data.parent }
+    });
 
-  if (existing) {
-    // already exists under same parent(s), return it
-    return existing;
+    if (existing) {
+      throw new Error("Category already exists under selected parent");
+    }
   }
 
   const category = new Category(data);
-  return category.save();
+  return await category.save();
 };
+
 
 
 

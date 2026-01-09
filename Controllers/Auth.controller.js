@@ -2,156 +2,164 @@ import jwt from "jsonwebtoken";
 import * as userService from "../Services/User.service.js";
 import { sendOTP, verifyOTP } from "../Services/Otp.service.js";
 
-// Helper to normalize mobile numbers
-// Normalize mobile numbers to 10-digit standard (Indian numbers as example)
+// ---------------- MOBILE NORMALIZER ----------------
 const normalizeMobile = (mobile) => {
   if (!mobile) return "";
-  
-  // Remove all non-digit characters
   let num = mobile.replace(/\D/g, "");
 
-  // Remove leading country code (assuming India +91)
   if (num.length > 10 && num.startsWith("91")) {
     num = num.slice(-10);
   }
 
-  // Remove leading zeros
   num = num.replace(/^0+/, "");
-
-  // Final 10-digit number
   return num;
 };
 
-
-// 🔹 1️⃣ Request OTP for registration (mobile + optional email)
+// ==================================================
+// 🔹 REGISTER – REQUEST OTP (MOBILE ONLY)
+// ==================================================
 export const registerRequestOtp = async (req, res) => {
   try {
-    const { name, mobile, email } = req.body;
+    const { name, mobile } = req.body;
 
-    if (!name) return res.status(400).json({ success: false, message: "Name is required" });
-    if (!mobile) return res.status(400).json({ success: false, message: "Mobile is required" });
+    if (!name)
+      return res.status(400).json({ success: false, message: "Name is required" });
+
+    if (!mobile)
+      return res.status(400).json({ success: false, message: "Mobile is required" });
 
     const formattedMobile = normalizeMobile(mobile);
 
-    // Check if user already exists by mobile
-    const existingMobileUser = await userService.getUserByIdentifier(formattedMobile);
-    if (existingMobileUser) {
-      return res.status(400).json({ success: false, message: "User already exists with this mobile" });
+    // Check if user already exists
+    const existingUser = await userService.getUserByMobile(formattedMobile);
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists with this mobile" });
     }
 
-    // Check if user already exists by email (only if provided and not empty)
-    if (email?.trim()) {
-      const existingEmailUser = await userService.getUserByIdentifier(email.trim());
-      if (existingEmailUser) {
-        return res.status(400).json({ success: false, message: "User already exists with this email" });
-      }
+    const result = await sendOTP(formattedMobile);
+
+    if (!result.success) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to send OTP" });
     }
 
-    // Send OTP
-    const mobileResult = await sendOTP(formattedMobile);
-    let emailResult = null;
-    if (email?.trim()) emailResult = await sendOTP(email.trim());
-
-    if(mobileResult.success)
-    {
     res.status(200).json({
       success: true,
-      message: "OTP sent. Please verify to complete registration.",
-      mobileOtpSent: mobileResult?.success,
-      emailOtpSent: !!emailResult?.success,
+      message: "OTP sent to mobile number",
     });
-  }
-  else{
-    res.json({success:false,
-      message:"Error Sending in OTP"
-    })
-  }
-
   } catch (err) {
-    console.error("❌ registerRequestOtp Error:", err);
+    console.error("❌ registerRequestOtp:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// 🔹 2️⃣ Verify OTP and register user
+// ==================================================
+// 🔹 REGISTER – VERIFY OTP
+// ==================================================
 export const registerVerifyOtp = async (req, res) => {
   try {
-    const { name, mobile, email, mobileOtp, emailOtp } = req.body;
+    const { name, mobile, otp } = req.body;
 
-    if (!mobileOtp) return res.status(400).json({ success: false, message: "Mobile OTP required" });
+    if (!otp)
+      return res.status(400).json({ success: false, message: "OTP required" });
 
     const formattedMobile = normalizeMobile(mobile);
 
-    // Verify mobile OTP
-    const isMobileValid = await verifyOTP(formattedMobile, mobileOtp);
-    if (!isMobileValid) return res.status(400).json({ success: false, message: "Invalid mobile OTP" });
-
-    // Verify email OTP if provided
-    if (email?.trim() && emailOtp) {
-      const isEmailValid = await verifyOTP(email.trim(), emailOtp);
-      if (!isEmailValid) return res.status(400).json({ success: false, message: "Invalid email OTP" });
+    const isValid = await verifyOTP(formattedMobile, otp);
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
-    // Check if user exists before creating
-    let user = await userService.getUserByIdentifier(formattedMobile);
-    if (!user && email?.trim()) user = await userService.getUserByIdentifier(email.trim());
-
-    if (user) {
-      return res.status(400).json({ success: false, message: "User already exists. Cannot register again." });
+    // Double check user
+    const existingUser = await userService.getUserByMobile(formattedMobile);
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
     }
 
-    // Create new user (email only if not empty)
-    user = await userService.createOrGetUser({ 
-      name, 
-      mobile: formattedMobile, 
-      email: email?.trim() || undefined 
+    const user = await userService.createUser({
+      name,
+      mobile: formattedMobile,
     });
 
-    // Generate JWT
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    res.status(201).json({ success: true, message: "Registration successful", user, token });
+    res.status(201).json({
+      success: true,
+      message: "Registration successful",
+      user,
+      token,
+    });
   } catch (err) {
-    console.error("❌ registerVerifyOtp Error:", err);
+    console.error("❌ registerVerifyOtp:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-
-// 🔹 3️⃣ Request OTP for login (mobile or email)
+// ==================================================
+// 🔹 LOGIN – REQUEST OTP (MOBILE ONLY)
+// ==================================================
 export const loginRequestOtp = async (req, res) => {
   try {
-    const { identifier } = req.body;
-    if (!identifier) return res.status(400).json({ success: false, message: "Identifier required" });
+    const { mobile } = req.body;
 
-    const user = await userService.getUserByIdentifier(identifier);
-    console.log(identifier);
-    console.log(user);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!mobile)
+      return res.status(400).json({ success: false, message: "Mobile required" });
 
-    const result = await sendOTP(identifier);
+    const formattedMobile = normalizeMobile(mobile);
+
+    const user = await userService.getUserByMobile(formattedMobile);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const result = await sendOTP(formattedMobile);
     res.status(200).json(result);
   } catch (err) {
+    console.error("❌ loginRequestOtp:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// 🔹 4️⃣ Verify OTP for login and generate JWT
+// ==================================================
+// 🔹 LOGIN – VERIFY OTP
+// ==================================================
 export const loginVerifyOtp = async (req, res) => {
   try {
-    const { identifier, otp } = req.body;
-    if (!otp) return res.status(400).json({ success: false, message: "OTP required" });
+    const { mobile, otp } = req.body;
 
-    const isValid = await verifyOTP(identifier, otp);
-    if (!isValid) return res.status(400).json({ success: false, message: "Invalid OTP" });
+    if (!otp)
+      return res.status(400).json({ success: false, message: "OTP required" });
 
-    const user = await userService.getUserByIdentifier(identifier);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const formattedMobile = normalizeMobile(mobile);
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const isValid = await verifyOTP(formattedMobile, otp);
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
+    const user = await userService.getUserByMobile(formattedMobile);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     res.status(200).json({ success: true, user, token });
   } catch (err) {
+    console.error("❌ loginVerifyOtp:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };

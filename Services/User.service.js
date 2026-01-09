@@ -1,47 +1,55 @@
 import User from "../Models/User.model.js";
 import Cart from "../Models/Cart.model.js";
-import jwt from "jsonwebtoken";
 import { verifyOTP } from "./Otp.service.js";
 
-// 🔹 Create or get user (used in registration after OTP verified)
-export const createOrGetUser = async ({ name, mobile, email }) => {
+// ==================================================
+// 🔹 CREATE USER (AFTER OTP VERIFIED)
+// ==================================================
+export const createUser = async ({ name, mobile }) => {
   let user = await User.findOne({ mobile });
+
   if (!user) {
-    user = await User.create({ name, mobile, email });
+    user = await User.create({
+      name,
+      mobile,
+    });
+
     // Create empty cart for new user
-    await Cart.create({ userId: user._id, items: [] });
+    await Cart.create({
+      userId: user._id,
+      items: [],
+    });
   }
+
   return user;
 };
 
-// 🔹 Get user by identifier (mobile or email)
-export const getUserByIdentifier = async (identifier) => {
-  
-  return await User.findOne({
-    $or: [{ mobile: identifier }, { email: identifier }],
-  });
+// ==================================================
+// 🔹 GET USER BY MOBILE ONLY
+// ==================================================
+export const getUserByMobile = async (mobile) => {
+  return await User.findOne({ mobile });
 };
 
-// 🔹 Update user (with mobile/email OTP verification if changed)
-export const updateUser = async (userId, { name, email, mobile, otp }) => {
+// ==================================================
+// 🔹 UPDATE USER (MOBILE + NAME ONLY)
+// ==================================================
+export const updateUser = async (userId, { name, mobile, otp }) => {
   const user = await User.findById(userId);
   if (!user) throw new Error("User not found");
 
-  // Verify mobile OTP if mobile changed
+  // Verify OTP if mobile is changed
   if (mobile && mobile !== user.mobile) {
     const isValid = await verifyOTP(mobile, otp);
-    if (!isValid) throw new Error("Mobile OTP verification failed");
+    if (!isValid) {
+      throw new Error("Mobile OTP verification failed");
+    }
     user.mobile = mobile;
   }
 
-  // Verify email OTP if email changed
-  if (email && email !== user.email) {
-    const isValid = await verifyOTP(email, otp);
-    if (!isValid) throw new Error("Email OTP verification failed");
-    user.email = email;
+  if (name) {
+    user.name = name;
   }
-
-  if (name) user.name = name;
 
   await user.save();
 
@@ -51,14 +59,15 @@ export const updateUser = async (userId, { name, email, mobile, otp }) => {
     user: {
       id: user._id,
       name: user.name,
-      email: user.email,
       mobile: user.mobile,
       role: user.role,
     },
   };
 };
 
-// 🔹 Delete user
+// ==================================================
+// 🔹 DELETE USER
+// ==================================================
 export const deleteUser = async (userId) => {
   const user = await User.findById(userId);
   if (!user) throw new Error("User not found");
@@ -66,5 +75,8 @@ export const deleteUser = async (userId) => {
   await User.findByIdAndDelete(userId);
   await Cart.deleteOne({ userId });
 
-  return { success: true, message: "User deleted successfully" };
+  return {
+    success: true,
+    message: "User deleted successfully",
+  };
 };
